@@ -1,0 +1,27 @@
+{
+  "name": "proyecto-web-restaurant",
+  "version": "1.0.0",
+  "description": "app web para gestion de pedidos, pagos y platillos de un restaurante",
+  "homepage": "https://github.com/Abraham-1001/proyecto-web-restaurant#readme",
+  "bugs": {
+    "url": "https://github.com/Abraham-1001/proyecto-web-restaurant/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abraham-1001/proyecto-web-restaurant.git"
+  },
+  "license": "ISC",
+  "author": "Edwin Garcia",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
