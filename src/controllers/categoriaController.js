@@ -14,8 +14,8 @@ function CrearCategoria(req, res) {
 function ObtenerCategorias(req, res) {
     modeloCategoria.find()
         .then((categorias) => {
-            if(!categorias) {
-                return res.status(404).json({ message: 'No se encontraron categorias' });
+            if(categorias.length === 0) {
+                return res.status(200).json({ message: 'No se encontraron categorias' });
             }
             res.status(200).json(categorias);
         })
