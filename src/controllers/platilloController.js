@@ -1,5 +1,6 @@
 const modeloPlatillo = require('../models/platilloModel');
 const modeloCategoria = require('../models/categoriaModel'); // para validar la categoria
+const modeloPedido = require('../models/pedidoModel'); // para validar si hay pedidos asociados al platillo
 
 function CrearPlatillo(req, res) {
     modeloCategoria.findById(req.body.categoria)
@@ -11,7 +12,7 @@ function CrearPlatillo(req, res) {
         })    
         .then((platillo) => {
             if (!platillo) return;
-            res.status(200).json({message: "Platillo creado correctamente", platillo});
+            res.status(201).json({message: "Platillo creado correctamente", platillo});
         })
         .catch((error) => {
             res.status(400).json({error: error.message});
@@ -50,11 +51,21 @@ function ConsultarPlatillo(req, res) {
 function EliminarPlatillo(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloPlatillo.findOneAndDelete(consulta)
+    modeloPlatillo.findOne(consulta)
         .then((platillo) => {
             if(!platillo) {
                 return res.status(404).json({ message: 'Platillo no encontrado' });
             }
+            return modeloPedido.findOne({ "detalles.platillo": platillo._id })
+                .then((pedido) => {
+                    if(pedido) {
+                        return res.status(400).json({ message: 'No se puede eliminar el platillo porque hay pedidos asociados a él' });
+                    }
+                    return modeloPlatillo.findByIdAndDelete(platillo._id);
+                });
+        })
+        .then((platilloEliminado) => {
+            if(!platilloEliminado) return;
             res.status(200).json({ message: 'Platillo eliminado correctamente'});
         })
         .catch((error) => {

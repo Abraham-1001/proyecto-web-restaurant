@@ -10,7 +10,8 @@ async function CrearUsuario(req, res) {
         const passCifrada = await bcrypt.hash(req.body.contrasena, 10);
         req.body.contrasena = passCifrada;
         const nuevoUsuario = new modeloUsuario(req.body);
-        return res.status(201).json({ message: 'Usuario creado correctamente', nuevoUsuario });
+        await nuevoUsuario.save();
+        return res.status(201).json({ message: 'Usuario creado correctamente', usuario:nuevoUsuario });
     } 
     catch (error) {
         return res.status(400).json({ error: error.message });
@@ -18,7 +19,7 @@ async function CrearUsuario(req, res) {
 }
 
  function ObtenerUsuarios(req, res) {
-    modeloUsuario.find()
+    modeloUsuario.find().select('-contrasena')
         .then((usuarios) => {
             if(usuarios.length === 0) {
                 return res.status(200).json({ message: 'No se encontraron usuarios' });
@@ -34,7 +35,7 @@ function ConsultarUsuario(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
     console.log(consulta);
-    modeloUsuario.findOne(consulta)
+    modeloUsuario.findOne(consulta).select('-contrasena')
         .then((usuario) => {
             if(!usuario) {
                 return res.status(404).json({ message: 'Usuario no encontrado' });

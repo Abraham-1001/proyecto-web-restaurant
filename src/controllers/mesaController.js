@@ -1,10 +1,11 @@
 const modeloMesa = require('../models/mesaModel');
+const modeloPedido = require('../models/pedidoModel');
 
 function CrearMesa(req, res) {
     console.log(req.body);
     new modeloMesa(req.body).save()
         .then((mesa) => {
-            res.status(200).json({ message: 'Mesa creada correctamente', mesa });
+            res.status(201).json({ message: 'Mesa creada correctamente', mesa });
         })
         .catch((error) => {
             res.status(400).json({ error: error.message });
@@ -43,11 +44,21 @@ function ConsultarMesa(req, res) {
 function EliminarMesa(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloMesa.findOneAndDelete(consulta)
+    modeloMesa.findOne(consulta)
         .then((mesa) => {
             if(!mesa) {
                 return res.status(404).json({ message: 'Mesa no encontrada' });
             }
+            return modeloPedido.findOne({ mesa: mesa._id })
+            .then((pedido) => {
+                if(pedido) {
+                    return res.status(400).json({ message: 'No se puede eliminar la mesa porque hay pedidos asociados a ella' });
+                }
+                return modeloMesa.findByIdAndDelete(mesa._id);
+            });
+        })
+        .then((mesaEliminada) => {
+            if(!mesaEliminada) return;
             res.status(200).json({ message: 'Mesa eliminada correctamente'});
         })
         .catch((error) => {

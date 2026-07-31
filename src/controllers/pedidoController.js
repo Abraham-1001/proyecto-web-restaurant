@@ -9,13 +9,15 @@ async function CrearPedido(req, res) {
         if (!mesero) {
             return res.status(404).json({message: "El mesero no existe."});
         }
+        if (mesero.rol !== "Mesero") {
+            return res.status(400).json({message: "El usuario no es un mesero."});
+        }
+        if (!mesero.estado) {
+            return res.status(400).json({message: "El mesero no está activo."});
+        }
         const mesa = await modeloMesa.findById(req.body.mesa);
         if (!mesa) {
             return res.status(404).json({message: "La mesa no existe." });
-        }
-        const platillo = await modeloPlatillo.findById(detalle.platillo);
-        if (!platillo.disponible) {
-            return res.status(400).json({message: "El platillo " + platillo.nombre + " no está disponible."});
         }
         if (mesa.estado !== "LIBRE") {
             return res.status(400).json({message: "La mesa ya está ocupada."});
@@ -29,6 +31,9 @@ async function CrearPedido(req, res) {
             const platillo = await modeloPlatillo.findById(detalle.platillo);
             if (!platillo) {
                 return res.status(404).json({message: "Uno de los platillos no existe."});
+            }
+            if (!platillo.disponible) {
+                return res.status(400).json({message: "El platillo " + platillo.nombre + " no está disponible."});
             }
             const subtotal = detalle.cantidad * platillo.precio;
             total += subtotal;
@@ -110,7 +115,42 @@ async function EliminarPedido(req, res) {
     }
 }
 
-function modificarPedido(req, res) {
+function ModificarPedido(req, res) {
+    const consulta = {};
+    consulta[req.params.key] = req.params.value;
+    if (!req.body.estado) {
+        return res.status(400).json({message: "Debes enviar un estado para modificar el pedido."});
+    }
+    modeloPedido.findOne(consulta)
+        .then((pedido) => {
+            if (!pedido) {
+                return res.status(404).json({message: "Pedido no encontrado"});
+            }
+            pedido.estado = req.body.estado;
+            return pedido.save();
+        })
+        .then((pedidoActualizado) => {
+            if (pedidoActualizado.estado === "PAGADO"||pedidoActualizado.estado === "CANCELADO") {
+                return modeloMesa.findById(pedidoActualizado.mesa)
+                    .then((mesa) => {
+                        if (mesa) {
+                            mesa.estado = "LIBRE";
+                            return mesa.save();
+                        }
+                    })
+                    .then(() => pedidoActualizado);
+            }
+            return pedidoActualizado;
+        })
+        .then((pedido) => {
+            res.status(200).json({message: "Pedido modificado correctamente",pedido});
+        })
+        .catch((error) => {
+            res.status(400).json({error: error.message});
+        });
+}
+
+/*function ModificarPedido(req, res) {
     const consulta = {};
     consulta[req.params.key] = req.params.value;
     modeloPedido.findOneAndUpdate(consulta,{estado: req.body.estado},{new: true})
@@ -123,7 +163,7 @@ function modificarPedido(req, res) {
     .catch((error) => {
         res.status(400).json({error: error.message});
     });
-}
+}*/
 
 module.exports = {
     CrearPedido,

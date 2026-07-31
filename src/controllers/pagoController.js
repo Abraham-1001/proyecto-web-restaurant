@@ -1,16 +1,6 @@
 const modeloPago = require('../models/pagoModel');
 const modeloPedido = require('../models/pedidoModel'); // para validar si existe el pedido
-
-/*function CrearPago(req, res) {
-    console.log(req.body);
-    new modeloPago(req.body).save()
-        .then((pago) => {
-            res.status(200).json({ message: 'Pago creado correctamente', pago });
-        })
-        .catch((error) => {
-            res.status(400).json({ error: error.message });
-        });
-}*/
+const modeloMesa = require('../models/mesaModel'); // para validar si existe la mesa
 
 function CrearPago(req, res) {
     modeloPedido.findById(req.body.pedido)
@@ -18,14 +8,35 @@ function CrearPago(req, res) {
             if (!pedido) {
                 return res.status(404).json({message: "El pedido no existe."});
             }
-            return new modeloPago(req.body).save();
+            if (pedido.estado === "PAGADO") {
+                return res.status(400).json({message: "El pedido ya está pagado."});
+            }
+            if (req.body.monto !== pedido.total) {
+                return res.status(400).json({message: "El monto del pago no coincide con el total del pedido."});
+            }
+            return new modeloPago(req.body).save()
+                .then((pago) => {
+                    pedido.estado = "PAGADO";
+                    return pedido.save()
+                        .then(() => {
+                            return modeloMesa.findById(pedido.mesa)
+                                .then((mesa) => { 
+                                    if (mesa) {
+                                        mesa.estado = "LIBRE";
+                                        return mesa.save();
+                                    }
+                                    return null;
+                                })
+                                .then(() => pago);
+                            });
+                });
         })
         .then((pago) => {
             if (!pago) return;
-            res.status(200).json({message: "Pago creado correctamente", pago});
+            res.status(201).json({message:"Pago creado correctamente", pago});
         })
         .catch((error) => {
-            res.status(400).json({error: error.message});
+            res.status(400).json({error:error.message});
         });
 }
 
@@ -76,7 +87,7 @@ function EliminarPago(req, res) {
 function ModificarPago(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloPago.findOneAndUpdate(consulta, req.body, { new: true })
+    modeloPago.findOneAndUpdate(consulta, { metodo_pago:req.body.metodo_pago, estado:req.body.estado }, { new: true })
         .then((pago) => {
             if(!pago) {
                 return res.status(404).json({ message: 'Pago no encontrado' });
