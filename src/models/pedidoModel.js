@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Esquema embebido para los ítems del pedido
 const detallePedidoSchema = new mongoose.Schema({
   platillo: {
     type: mongoose.Schema.Types.ObjectId,
