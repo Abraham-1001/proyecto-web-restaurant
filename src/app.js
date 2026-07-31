@@ -7,7 +7,7 @@ const rutaMesa = require('./routes/rutaMesa');
 const rutaPago = require('./routes/rutaPago');
 const rutaPedido = require('./routes/rutaPedido');
 const rutaPlatillo = require('./routes/rutaPlatillo');
-const rutaUsuario = require('./routes/rutaUsuario');
+const rutaUsuarios = require('./routes/rutaUsuarios');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -17,7 +17,7 @@ app.use('/mesas', rutaMesa);
 app.use('/pagos', rutaPago);
 app.use('/pedidos', rutaPedido);
 app.use('/platillos', rutaPlatillo);
-app.use('/usuarios', rutaUsuario);
+app.use('/usuarios', rutaUsuarios);
 
 
 
