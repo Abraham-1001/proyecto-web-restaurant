@@ -13,6 +13,10 @@ async function CrearPedido(req, res) {
         if (!mesa) {
             return res.status(404).json({message: "La mesa no existe." });
         }
+        const platillo = await modeloPlatillo.findById(detalle.platillo);
+        if (!platillo.disponible) {
+            return res.status(400).json({message: "El platillo " + platillo.nombre + " no está disponible."});
+        }
         if (mesa.estado !== "LIBRE") {
             return res.status(400).json({message: "La mesa ya está ocupada."});
         }

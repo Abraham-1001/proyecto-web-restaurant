@@ -9,7 +9,8 @@ const platilloSchema = new mongoose.Schema({
   nombre: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   descripcion: {
     type: String,
@@ -17,7 +18,8 @@ const platilloSchema = new mongoose.Schema({
   },
   precio: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
   },
   imagen: {
     type: String,
