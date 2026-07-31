@@ -5,6 +5,9 @@ const port = 3000;
 const rutaCategoria = require('./routes/rutaCategoria');
 const rutaMesa = require('./routes/rutaMesa');
 const rutaPago = require('./routes/rutaPago');
+const rutaPedido = require('./routes/rutaPedido');
+const rutaPlatillo = require('./routes/rutaPlatillo');
+const rutaUsuario = require('./routes/rutaUsuario');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -12,6 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/categorias', rutaCategoria);
 app.use('/mesas', rutaMesa);
 app.use('/pagos', rutaPago);
+app.use('/pedidos', rutaPedido);
+app.use('/platillos', rutaPlatillo);
+app.use('/usuarios', rutaUsuario);
+
 
 
 module.exports = { 
