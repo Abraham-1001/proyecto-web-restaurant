@@ -8,7 +8,7 @@ const usuarioSchema = new mongoose.Schema({
   },
   apellido: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   correo: {
@@ -19,7 +19,7 @@ const usuarioSchema = new mongoose.Schema({
     lowercase: true,
     match: [/^\S+@\S+\.\S+$/, 'correo electrónico no valido.']
   },
-  contrasena: {
+  password: {
     type: String,
     required: true
   },
@@ -29,7 +29,7 @@ const usuarioSchema = new mongoose.Schema({
   },
   rol: {
     type: String,
-    enum: ['Administrador', 'Mesero', 'Cajero'],
+    enum: ['ADMIN', 'MESERO', 'CAJERO'],
     required: true
   },
   estado: {

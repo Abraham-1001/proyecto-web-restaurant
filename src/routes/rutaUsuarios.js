@@ -8,4 +8,6 @@ router.post('/', usuarioController.CrearUsuario)
     .delete('/:key/:value', usuarioController.EliminarUsuario)
     .put('/:key/:value', usuarioController.ModificarUsuario)
 
+router.post('/login', usuarioController.loginUsuario);
+
 module.exports = router;
