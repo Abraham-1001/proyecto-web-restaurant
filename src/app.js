@@ -9,6 +9,7 @@ const rutaUsuarios = require('./routes/rutaUsuarios');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 app.use('/categorias', rutaCategoria);
 app.use('/mesas', rutaMesa);
