@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Administrador</title>
+    <!-- Script de Protección de Ruta -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/index.html';
+        }
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = '/index.html';
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2b2b2b;
+            background-blend-mode: overlay;
+        }
+
+        .navbar-glass {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            color: #fff !important;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .role-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-right: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4);
+            color: white;
+        }
+
+        .dashboard-container {
+            padding: 40px 15px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px 20px;
+            color: #fff;
+            transition: all 0.3s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            color: #fff;
+        }
+
+        .glass-card h4 {
+            font-weight: 600;
+            margin-bottom: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .glass-card i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ff6b6b;
+            transition: transform 0.3s;
+        }
+        
+        .glass-card:hover i {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-glass">
+        <div class="container">
+            <a class="navbar-brand" href="#">Pizzería - Panel de Control</a>
+            <div class="d-flex align-items-center ms-auto">
+                <span class="role-badge"><i class="fas fa-user-shield me-2"></i>Admin</span>
+                <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión <i class="fas fa-sign-out-alt ms-1"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container">
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card">
+                    <i class="fas fa-users"></i>
+                    <h4>Gestión de Usuarios</h4>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card">
+                    <i class="fas fa-pizza-slice"></i>
+                    <h4>Menú / Platillos</h4>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card">
+                    <i class="fas fa-chair"></i>
+                    <h4>Mesas</h4>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card">
+                    <i class="fas fa-receipt"></i>
+                    <h4>Pedidos</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
