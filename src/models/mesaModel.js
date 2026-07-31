@@ -4,11 +4,13 @@ const mesaSchema = new mongoose.Schema({
   numero_mesa: {
     type: Number,
     required: true,
-    unique: true
+    unique: true,
+    min: 1
   },
   capacidad: {
     type: Number,
-    required: true
+    required: true,
+    min: 1
   },
   estado: {
     type: String,

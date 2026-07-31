@@ -16,7 +16,8 @@ const usuarioSchema = new mongoose.Schema({
     required: true,
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, 'correo electrónico no valido.']
   },
   contrasena: {
     type: String,
@@ -24,7 +25,7 @@ const usuarioSchema = new mongoose.Schema({
   },
   telefono: {
     type: String,
-    required: false
+    trim: true
   },
   rol: {
     type: String,

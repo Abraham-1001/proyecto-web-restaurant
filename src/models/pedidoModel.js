@@ -9,15 +9,18 @@ const detallePedidoSchema = new mongoose.Schema({
   cantidad: {
     type: Number,
     required: true,
-    default: 1
+    default: 1,
+    min: 1
   },
   precio_unitario: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
   },
   subtotal: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
   }
 });
 
@@ -45,7 +48,8 @@ const pedidoSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true,
-    default: 0
+    default: 0,
+    min: 0
   }
 });
 

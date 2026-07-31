@@ -14,7 +14,7 @@ const platilloSchema = new mongoose.Schema({
   },
   descripcion: {
     type: String,
-    required: false
+    trim: true
   },
   precio: {
     type: Number,

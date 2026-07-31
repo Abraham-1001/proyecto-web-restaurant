@@ -4,11 +4,12 @@ const categoriaSchema = new mongoose.Schema({
   nombre: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   descripcion: {
     type: String,
-    required: false
+    trim: true
   }
 });
 

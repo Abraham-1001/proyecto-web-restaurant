@@ -14,7 +14,8 @@ const pagoSchema = new mongoose.Schema({
   },
   monto: {
     type: Number,
-    required: true
+    required: true,
+    min: 1
   },
   fecha_pago: {
     type: Date,
