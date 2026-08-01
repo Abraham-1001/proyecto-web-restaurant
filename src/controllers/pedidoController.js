@@ -1,6 +1,6 @@
 const modeloPedido = require('../models/pedidoModel');
 const modeloMesa = require('../models/mesaModel');
-const modeloUsuario = require('../models/usuarioModel');
+const modeloUsuario = require('../models/usuariosModel');
 const modeloPlatillo = require('../models/platilloModel');
 
 async function CrearPedido(req, res) {

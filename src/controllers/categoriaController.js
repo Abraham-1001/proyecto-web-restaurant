@@ -16,7 +16,14 @@ function ObtenerCategorias(req, res) {
     modeloCategoria.find()
         .then((categorias) => {
             if(categorias.length === 0) {
-                return res.status(200).json({ message: 'No se encontraron categorias' });
+                const categoriasDefecto = [
+                    { nombre: 'Pizza' },
+                    { nombre: 'Bebida' },
+                    { nombre: 'Entrada' },
+                    { nombre: 'Postre' }
+                ];
+                return modeloCategoria.insertMany(categoriasDefecto)
+                    .then((nuevas) => res.status(200).json(nuevas));
             }
             res.status(200).json(categorias);
         })
