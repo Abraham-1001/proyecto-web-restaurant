@@ -9,8 +9,8 @@ async function CrearPedido(req, res) {
         if (!mesero) {
             return res.status(404).json({message: "El mesero no existe."});
         }
-        if (mesero.rol !== "MESERO") {
-            return res.status(400).json({message: "El usuario no es un mesero."});
+        if (mesero.rol !== "MESERO" && mesero.rol !== "ADMIN") {
+            return res.status(400).json({message: "El usuario no tiene permisos para crear pedidos."});
         }
         if (!mesero.estado) {
             return res.status(400).json({message: "El mesero no está activo."});
