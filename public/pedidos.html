@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Punto de Venta / Pedidos</title>
+    <meta name="description" content="Sistema POS para toma de pedidos en la Pizzería. Seleccione mesa, agregue platillos y envíe a cocina.">
+    <!-- Script de Protección de Ruta -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/index.html';
+        }
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = '/index.html';
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Base ────────────────────────────────────────────── */
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2b2b2b;
+            background-blend-mode: overlay;
+        }
+
+        /* ── Navbar ──────────────────────────────────────────── */
+        .navbar-glass {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .navbar-brand { color: #fff !important; font-weight: 700; }
+
+        .btn-custom, .btn-logout {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white; border: none; border-radius: 8px;
+            padding: 6px 15px; font-weight: 600; transition: all .3s;
+        }
+        .btn-custom:hover, .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255,71,87,.4);
+            color: white;
+        }
+
+        /* ── Glass panels ────────────────────────────────────── */
+        .glass-panel {
+            background: rgba(255,255,255,.12);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 20px;
+            padding: 24px;
+            color: #fff;
+            animation: fadeIn .8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Menu grid – platillo cards ──────────────────────── */
+        .platillo-card {
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 14px;
+            padding: 18px;
+            color: #fff;
+            transition: all .3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .platillo-card:hover {
+            background: rgba(255,255,255,.16);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 22px rgba(0,0,0,.3);
+        }
+        .platillo-card .platillo-nombre {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+        }
+        .platillo-card .platillo-desc {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+            flex: 1;
+        }
+        .platillo-card .platillo-precio {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #7bed9f;
+            margin: 8px 0 10px;
+        }
+        .platillo-card .btn-agregar {
+            background: linear-gradient(135deg, #2ed573, #7bed9f);
+            border: none; color: #1a1a2e;
+            font-weight: 600; border-radius: 10px;
+            padding: 6px 0; transition: all .25s;
+        }
+        .platillo-card .btn-agregar:hover {
+            transform: scale(1.04);
+            box-shadow: 0 4px 12px rgba(46,213,115,.4);
+        }
+
+        /* Category filter pills */
+        .cat-pill {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+            border-radius: 20px;
+            padding: 5px 16px;
+            font-size: .85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .25s;
+            white-space: nowrap;
+        }
+        .cat-pill:hover, .cat-pill.active {
+            background: rgba(255,107,129,.35);
+            border-color: #ff6b81;
+            color: #fff;
+        }
+
+        /* ── Ticket / Resumen ────────────────────────────────── */
+        .ticket-panel {
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 20px;
+            padding: 24px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            animation: fadeIn .8s ease-in-out;
+        }
+        .ticket-header {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ticket-header i { color: #ff6b6b; }
+
+        .ticket-items {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            max-height: 400px;
+        }
+        .ticket-items::-webkit-scrollbar { width: 5px; }
+        .ticket-items::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,.2);
+            border-radius: 10px;
+        }
+
+        .ticket-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,.06);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all .25s;
+        }
+        .ticket-item:hover { background: rgba(255,255,255,.1); }
+
+        .ticket-item .item-name {
+            flex: 1;
+            font-weight: 500;
+            font-size: .92rem;
+        }
+        .ticket-item .item-price {
+            font-weight: 600;
+            color: #7bed9f;
+            font-size: .92rem;
+            min-width: 65px;
+            text-align: right;
+        }
+        .ticket-item .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ticket-item .qty-controls .btn-qty {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.3);
+            background: transparent;
+            color: #fff;
+            font-size: .8rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all .2s;
+            padding: 0;
+        }
+        .ticket-item .qty-controls .btn-qty:hover {
+            background: rgba(255,255,255,.15);
+        }
+        .ticket-item .qty-controls .qty-val {
+            min-width: 22px;
+            text-align: center;
+            font-weight: 600;
+            font-size: .9rem;
+        }
+        .ticket-item .btn-remove {
+            background: transparent;
+            border: none;
+            color: #ff4757;
+            font-size: .9rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: all .2s;
+        }
+        .ticket-item .btn-remove:hover {
+            background: rgba(255,71,87,.2);
+        }
+
+        /* Total row */
+        .ticket-total {
+            border-top: 1px solid rgba(255,255,255,.15);
+            padding-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .ticket-total .total-amount {
+            color: #7bed9f;
+            font-size: 1.5rem;
+        }
+
+        .btn-enviar-pedido {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.05rem;
+            border-radius: 14px;
+            padding: 14px 0;
+            width: 100%;
+            margin-top: 14px;
+            transition: all .3s;
+            letter-spacing: .3px;
+        }
+        .btn-enviar-pedido:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,71,87,.45);
+            color: #fff;
+        }
+        .btn-enviar-pedido:disabled {
+            opacity: .45;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Empty ticket state */
+        .ticket-empty {
+            text-align: center;
+            padding: 40px 10px;
+            color: rgba(255,255,255,.35);
+        }
+        .ticket-empty i { font-size: 2.5rem; margin-bottom: 10px; }
+
+        /* Form elements */
+        .form-select {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+        }
+        .form-select:focus {
+            background: rgba(255,255,255,.2);
+            color: #fff; box-shadow: none;
+            border-color: #ff6b81;
+        }
+        .form-select option { background: #2b2b2b; color: #fff; }
+
+        .form-control {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+        }
+        .form-control:focus {
+            background: rgba(255,255,255,.2);
+            color: #fff; box-shadow: none;
+            border-color: #ff6b81;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,.4); }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .pos-row { flex-direction: column; }
+            .ticket-items { max-height: 260px; }
+        }
+
+        /* Search bar icon */
+        .search-wrap {
+            position: relative;
+        }
+        .search-wrap i {
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,.35);
+            pointer-events: none;
+        }
+        .search-wrap .form-control {
+            padding-left: 38px;
+        }
+
+        /* Stagger cards */
+        .plat-col {
+            animation: fadeInCard .45s ease both;
+        }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(12px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Navbar ─────────────────────────────────────────── -->
+    <nav class="navbar navbar-expand-lg navbar-glass">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand" href="#"><i class="fas fa-cash-register me-2"></i>Pizzería - Punto de Venta</a>
+            <div class="d-flex align-items-center ms-auto">
+                <a href="/admin.html" class="btn btn-outline-light me-2 btn-sm" id="btnVolverPanel"><i class="fas fa-arrow-left me-1"></i> Volver al Panel</a>
+                <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión <i class="fas fa-sign-out-alt ms-1"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Alert global ──────────────────────────────────── -->
+    <div class="container-fluid px-3 mt-2">
+        <div id="alertPedidos" class="alert d-none"></div>
+    </div>
+
+    <!-- ── POS Layout (2 columns) ────────────────────────── -->
+    <div class="container-fluid px-3 mt-2 mb-4">
+        <div class="row g-3 pos-row">
+
+            <!-- ▸ Left Column – Menu ──────────────────────── -->
+            <div class="col-lg-7 col-xl-8">
+                <div class="glass-panel">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h5 class="mb-0"><i class="fas fa-pizza-slice me-2 text-danger"></i>Menú Disponible</h5>
+                        <div class="search-wrap" style="min-width:220px; max-width:300px; flex:1;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" class="form-control form-control-sm" id="searchPlatillo" placeholder="Buscar platillo...">
+                        </div>
+                    </div>
+
+                    <!-- Category filter -->
+                    <div class="d-flex flex-wrap gap-2 mb-3" id="categoryFilters">
+                        <!-- populated by JS -->
+                    </div>
+
+                    <!-- Platillos grid -->
+                    <div class="row g-3" id="menuGrid">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ▸ Right Column – Ticket ───────────────────── -->
+            <div class="col-lg-5 col-xl-4">
+                <div class="ticket-panel">
+
+                    <div class="ticket-header">
+                        <i class="fas fa-receipt"></i> Ticket de Pedido
+                    </div>
+
+                    <!-- Mesa selector -->
+                    <div class="mb-3">
+                        <label for="selectMesa" class="form-label mb-1" style="font-size:.85rem; opacity:.7;">
+                            <i class="fas fa-chair me-1"></i>Seleccionar Mesa (Libre)
+                        </label>
+                        <select class="form-select form-select-sm" id="selectMesa" required>
+                            <option value="">-- Elige una mesa --</option>
+                        </select>
+                    </div>
+
+                    <!-- Items list -->
+                    <div class="ticket-items" id="ticketItems">
+                        <div class="ticket-empty">
+                            <i class="fas fa-shopping-basket d-block"></i>
+                            <p class="mb-0">Agrega platillos del menú</p>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="ticket-total">
+                        <span>TOTAL</span>
+                        <span class="total-amount" id="ticketTotal">$0.00</span>
+                    </div>
+
+                    <!-- Confirm button -->
+                    <button class="btn btn-enviar-pedido" id="btnEnviarPedido" disabled>
+                        <i class="fas fa-paper-plane me-2"></i>Confirmar y Enviar a Cocina
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/pedidos.js"></script>
+</body>
+</html>

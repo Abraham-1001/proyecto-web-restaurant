@@ -9,7 +9,7 @@ async function CrearPedido(req, res) {
         if (!mesero) {
             return res.status(404).json({message: "El mesero no existe."});
         }
-        if (mesero.rol !== "Mesero") {
+        if (mesero.rol !== "MESERO") {
             return res.status(400).json({message: "El usuario no es un mesero."});
         }
         if (!mesero.estado) {
@@ -153,7 +153,7 @@ function ModificarPedido(req, res) {
 /*function ModificarPedido(req, res) {
     const consulta = {};
     consulta[req.params.key] = req.params.value;
-    modeloPedido.findOneAndUpdate(consulta,{estado: req.body.estado},{new: true})
+    modeloPedido.findOneAndUpdate(consulta,{estado: req.body.estado},{returnDocument: 'after'})
     .then((pedido) => {
         if (!pedido) {
             return res.status(404).json({message: "Pedido no encontrado"});
