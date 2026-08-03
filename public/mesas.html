@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Gestión de Mesas</title>
+    <meta name="description" content="Módulo de gestión de mesas para la administración de la Pizzería.">
+    <!-- Script de Protección de Ruta -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/index.html';
+        }
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = '/index.html';
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2b2b2b;
+            background-blend-mode: overlay;
+        }
+
+        .navbar-glass {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            color: #fff !important;
+            font-weight: 700;
+        }
+
+        .btn-custom, .btn-logout {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-custom:hover, .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            color: white;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            color: #fff;
+            margin-top: 30px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Card Grid para Mesas --- */
+        .mesa-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            color: #fff;
+            transition: all 0.35s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mesa-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+            transition: all 0.35s ease;
+        }
+
+        .mesa-card.estado-libre::before {
+            background: linear-gradient(90deg, #2ed573, #7bed9f);
+        }
+        .mesa-card.estado-ocupada::before {
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+        }
+        .mesa-card.estado-reservada::before {
+            background: linear-gradient(90deg, #ffa502, #eccc68);
+        }
+
+        .mesa-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .mesa-card .mesa-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            color: #ff6b6b;
+            transition: transform 0.3s;
+        }
+
+        .mesa-card:hover .mesa-icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .mesa-card .mesa-numero {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .mesa-card .mesa-capacidad {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 4px;
+        }
+
+        .mesa-card .mesa-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .mesa-card .mesa-actions .btn {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
+        .badge-estado {
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-libre {
+            background: linear-gradient(135deg, #2ed573, #7bed9f);
+            color: #1a1a2e;
+        }
+        .badge-ocupada {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: #fff;
+        }
+        .badge-reservada {
+            background: linear-gradient(135deg, #ffa502, #eccc68);
+            color: #1a1a2e;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.4;
+        }
+
+        /* --- Modal Styling (mismo estilo que platillos) --- */
+        .modal-content {
+            background: rgba(40, 40, 40, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .modal-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            box-shadow: none;
+            border-color: #ff6b81;
+        }
+        .form-select option {
+            background: #2b2b2b;
+            color: #fff;
+        }
+
+        /* Stagger animation for cards */
+        .mesa-card-wrapper {
+            animation: fadeInCard 0.5s ease both;
+        }
+        .mesa-card-wrapper:nth-child(1) { animation-delay: 0.05s; }
+        .mesa-card-wrapper:nth-child(2) { animation-delay: 0.1s; }
+        .mesa-card-wrapper:nth-child(3) { animation-delay: 0.15s; }
+        .mesa-card-wrapper:nth-child(4) { animation-delay: 0.2s; }
+        .mesa-card-wrapper:nth-child(5) { animation-delay: 0.25s; }
+        .mesa-card-wrapper:nth-child(6) { animation-delay: 0.3s; }
+        .mesa-card-wrapper:nth-child(7) { animation-delay: 0.35s; }
+        .mesa-card-wrapper:nth-child(8) { animation-delay: 0.4s; }
+
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(15px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-glass">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-chair me-2"></i>Pizzería - Gestión de Mesas</a>
+            <div class="d-flex align-items-center ms-auto">
+                <a href="/admin.html" class="btn btn-outline-light me-3 btn-sm"><i class="fas fa-arrow-left me-1"></i> Volver al Panel</a>
+                <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión <i class="fas fa-sign-out-alt ms-1"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="glass-panel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0"><i class="fas fa-chair me-2"></i> Mesas</h3>
+                <button class="btn btn-custom" id="btnNuevaMesa"><i class="fas fa-plus me-1"></i> Nueva Mesa</button>
+            </div>
+
+            <div id="alertMesas" class="alert d-none"></div>
+
+            <!-- Cuadrícula de tarjetas de mesas -->
+            <div class="row g-4" id="mesasGrid">
+                <!-- Las tarjetas se generan con JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mesa -->
+    <div class="modal fade" id="modalMesa" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalMesaTitle">Nueva Mesa</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="formMesa">
+                <input type="hidden" id="mesaId">
+                <div class="mb-3">
+                    <label for="numero_mesa" class="form-label">Número de Mesa</label>
+                    <input type="number" class="form-control" id="numero_mesa" min="1" required>
+                </div>
+                <div class="mb-3">
+                    <label for="capacidad" class="form-label">Capacidad (personas)</label>
+                    <input type="number" class="form-control" id="capacidad" min="1" required>
+                </div>
+                <div class="mb-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" required>
+                        <option value="LIBRE">Libre</option>
+                        <option value="OCUPADA">Ocupada</option>
+                        <option value="RESERVADA">Reservada</option>
+                    </select>
+                </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-custom" id="btnGuardarMesa">Guardar Mesa</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/mesas.js"></script>
+</body>
+</html>

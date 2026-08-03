@@ -90,7 +90,7 @@ async function ModificarUsuario(req, res) {
             }
             req.body.password = await bcrypt.hash(req.body.password, 10);
         }
-        const usuario = await modeloUsuario.findOneAndUpdate(consulta, req.body, { new: true });
+        const usuario = await modeloUsuario.findOneAndUpdate(consulta, req.body, { returnDocument: 'after' });
         if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }

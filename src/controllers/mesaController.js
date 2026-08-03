@@ -69,7 +69,7 @@ function EliminarMesa(req, res) {
 function ModificarMesa(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloMesa.findOneAndUpdate(consulta, req.body, { new: true })
+    modeloMesa.findOneAndUpdate(consulta, req.body, { returnDocument: 'after' })
         .then((mesa) => {
             if(!mesa) {
                 return res.status(404).json({ message: 'Mesa no encontrada' });

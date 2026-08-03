@@ -87,7 +87,7 @@ function EliminarPago(req, res) {
 function ModificarPago(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloPago.findOneAndUpdate(consulta, { metodo_pago:req.body.metodo_pago, estado:req.body.estado }, { new: true })
+    modeloPago.findOneAndUpdate(consulta, { metodo_pago:req.body.metodo_pago, estado:req.body.estado }, { returnDocument: 'after' })
         .then((pago) => {
             if(!pago) {
                 return res.status(404).json({ message: 'Pago no encontrado' });
