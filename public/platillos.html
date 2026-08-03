@@ -67,20 +67,21 @@
         }
 
         .table {
-            color: #fff;
+            --bs-table-bg: transparent !important;
+            --bs-table-accent-bg: transparent !important;
+            --bs-table-striped-bg: transparent !important;
+            --bs-table-hover-bg: rgba(255, 255, 255, 0.08) !important;
+            --bs-table-color: #ffffff !important;
+            color: #ffffff !important;
+            margin-bottom: 0;
+        }
+        .table thead th,
+        .table tbody td,
+        .table tbody tr {
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
             vertical-align: middle;
-        }
-        .table thead {
-            background: rgba(0,0,0,0.3);
-            color: #fff;
-        }
-        .table-striped>tbody>tr:nth-of-type(odd)>* {
-            color: #fff;
-            background-color: rgba(255,255,255,0.05);
-        }
-        .table-hover>tbody>tr:hover>* {
-            color: #fff;
-            background-color: rgba(255,255,255,0.1);
         }
 
         /* Modal styling */
@@ -135,7 +136,7 @@
             <div id="alertPlatillos" class="alert d-none"></div>
 
             <div class="table-responsive">
-                <table class="table table-hover table-striped" id="tablaPlatillos">
+                <table class="table table-hover" id="tablaPlatillos">
                     <thead>
                         <tr>
                             <th>Nombre</th>

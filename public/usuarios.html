@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Gestión de Personal</title>
+    <meta name="description" content="Módulo de gestión de usuarios y personal de la Pizzería.">
+    <!-- Script de Protección de Ruta (solo ADMIN) -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/index.html';
+        }
+        const _usr = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (_usr.rol && _usr.rol !== 'ADMIN') {
+            window.location.href = '/index.html';
+        }
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = '/index.html';
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2b2b2b;
+            background-blend-mode: overlay;
+        }
+
+        .navbar-glass {
+            background: rgba(0,0,0,.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,.1);
+        }
+        .navbar-brand { color: #fff !important; font-weight: 700; }
+
+        .btn-custom, .btn-logout {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white; border: none; border-radius: 8px;
+            padding: 6px 15px; font-weight: 600; transition: all .3s;
+        }
+        .btn-custom:hover, .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255,71,87,.4);
+            color: white;
+        }
+
+        .glass-panel {
+            background: rgba(255,255,255,.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,.3);
+            border-radius: 20px;
+            padding: 30px;
+            color: #fff;
+            margin-top: 30px;
+            animation: fadeIn .8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Table */
+        .table {
+            --bs-table-bg: transparent !important;
+            --bs-table-accent-bg: transparent !important;
+            --bs-table-striped-bg: transparent !important;
+            --bs-table-hover-bg: rgba(255, 255, 255, 0.08) !important;
+            --bs-table-color: #ffffff !important;
+            color: #ffffff !important;
+            margin-bottom: 0;
+        }
+        .table thead th,
+        .table tbody td,
+        .table tbody tr {
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            vertical-align: middle;
+        }
+
+        /* Role badges */
+        .badge-admin {
+            background: linear-gradient(135deg, #a55eea, #8854d0);
+            color: #fff;
+        }
+        .badge-mesero {
+            background: linear-gradient(135deg, #0abde3, #48dbfb);
+            color: #1a1a2e;
+        }
+        .badge-cajero {
+            background: linear-gradient(135deg, #ffa502, #eccc68);
+            color: #1a1a2e;
+        }
+        .badge-rol {
+            font-size: .78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: .3px;
+        }
+
+        /* Estado badges */
+        .badge-activo {
+            background: linear-gradient(135deg, #2ed573, #7bed9f);
+            color: #1a1a2e;
+        }
+        .badge-inactivo {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: #fff;
+        }
+
+        /* Modal styling */
+        .modal-content {
+            background: rgba(40,40,40,.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+        }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,.1); }
+        .modal-footer { border-top: 1px solid rgba(255,255,255,.1); }
+        .form-control, .form-select {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,.2);
+            color: #fff; box-shadow: none;
+            border-color: #ff6b81;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,.4); }
+        .form-select option { background: #2b2b2b; color: #fff; }
+        .form-check-input:checked {
+            background-color: #2ed573;
+            border-color: #2ed573;
+        }
+
+        /* Password toggle */
+        .input-group .btn-eye {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: rgba(255,255,255,.6);
+            border-left: none;
+        }
+        .input-group .btn-eye:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-glass">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-users-cog me-2"></i>Pizzería - Gestión de Personal</a>
+            <div class="d-flex align-items-center ms-auto">
+                <a href="/admin.html" class="btn btn-outline-light me-3 btn-sm"><i class="fas fa-arrow-left me-1"></i> Volver al Panel</a>
+                <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión <i class="fas fa-sign-out-alt ms-1"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="glass-panel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0"><i class="fas fa-users me-2"></i> Personal del Sistema</h3>
+                <button class="btn btn-custom" id="btnNuevoUsuario"><i class="fas fa-plus me-1"></i> Nuevo Usuario</button>
+            </div>
+
+            <div id="alertUsuarios" class="alert d-none"></div>
+
+            <div class="table-responsive">
+                <table class="table table-hover" id="tablaUsuarios">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Teléfono</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los datos se llenarán con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Usuario -->
+    <div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalUsuarioTitle">Nuevo Usuario</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="formUsuario">
+                <input type="hidden" id="usuarioId">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nombre" placeholder="Ej. Juan" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="apellido" class="form-label">Apellido</label>
+                        <input type="text" class="form-control" id="apellido" placeholder="Ej. Pérez">
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <label for="correo" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="correo" placeholder="usuario@correo.com" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label" id="labelPassword">Contraseña <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" placeholder="Mínimo 6 caracteres">
+                        <button class="btn btn-eye" type="button" id="togglePassword"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <small class="text-muted" id="passwordHelp" style="color:rgba(255,255,255,.4)!important; font-size:.78rem;"></small>
+                </div>
+                <div class="mb-3">
+                    <label for="telefono" class="form-label">Teléfono</label>
+                    <input type="text" class="form-control" id="telefono" placeholder="(Opcional)">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="rol" class="form-label">Rol <span class="text-danger">*</span></label>
+                        <select class="form-select" id="rol" required>
+                            <option value="">Selecciona un rol...</option>
+                            <option value="ADMIN">Administrador</option>
+                            <option value="MESERO">Mesero</option>
+                            <option value="CAJERO">Cajero</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="estado" checked>
+                            <label class="form-check-label" for="estado">Usuario Activo</label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-custom" id="btnGuardarUsuario">Guardar Usuario</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/usuarios.js"></script>
+</body>
+</html>
