@@ -21,7 +21,7 @@ app.use('/platillos', rutaPlatillo);
 app.use('/pedidos', rutaPedido);
 
 
-module.exports = { 
-    app, 
-    port 
+module.exports = {
+    app,
+    port
 };
