@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Caja y Pagos</title>
+    <meta name="description" content="Módulo de caja para cobro de pedidos y liberación de mesas en la Pizzería.">
+    <!-- Script de Protección de Ruta -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/index.html';
+        }
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = '/index.html';
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Base ─────────────────────────────────────────── */
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2b2b2b;
+            background-blend-mode: overlay;
+        }
+
+        /* ── Navbar ───────────────────────────────────────── */
+        .navbar-glass {
+            background: rgba(0,0,0,.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,.1);
+        }
+        .navbar-brand { color: #fff !important; font-weight: 700; }
+        .btn-custom, .btn-logout {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white; border: none; border-radius: 8px;
+            padding: 6px 15px; font-weight: 600; transition: all .3s;
+        }
+        .btn-custom:hover, .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255,71,87,.4);
+            color: white;
+        }
+
+        /* ── Glass panels ─────────────────────────────────── */
+        .glass-panel {
+            background: rgba(255,255,255,.12);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 20px;
+            padding: 24px;
+            color: #fff;
+            animation: fadeIn .8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Pedido cards (left col) ──────────────────────── */
+        .pedido-card {
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 14px;
+            padding: 18px;
+            color: #fff;
+            cursor: pointer;
+            transition: all .3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .pedido-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            border-radius: 14px 14px 0 0;
+        }
+        .pedido-card:hover, .pedido-card.selected {
+            background: rgba(255,255,255,.18);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,.35);
+        }
+        .pedido-card.selected {
+            border-color: #ff6b81;
+            box-shadow: 0 0 0 2px rgba(255,107,129,.5), 0 10px 25px rgba(0,0,0,.35);
+        }
+        .pedido-card .mesa-tag {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+        .pedido-card .mesa-tag i {
+            color: #ff6b6b;
+            margin-right: 6px;
+        }
+        .pedido-card .pedido-meta {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+            margin-top: 4px;
+        }
+        .pedido-card .pedido-total-badge {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #7bed9f;
+        }
+        .badge-estado-pedido {
+            font-size: .72rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* stagger animation */
+        .pedido-col {
+            animation: fadeInCard .45s ease both;
+        }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(12px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* empty state */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: rgba(255,255,255,.4);
+        }
+        .empty-state i { font-size: 3.5rem; margin-bottom: 12px; opacity: .5; }
+
+        /* ── Cobro panel (right col) ──────────────────────── */
+        .cobro-panel {
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 20px;
+            padding: 24px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            animation: fadeIn .8s ease-in-out;
+        }
+        .cobro-header {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 18px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cobro-header i { color: #ff6b6b; }
+
+        /* detail items */
+        .detalle-items {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 340px;
+            margin-bottom: 14px;
+        }
+        .detalle-items::-webkit-scrollbar { width: 5px; }
+        .detalle-items::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,.2);
+            border-radius: 10px;
+        }
+        .detalle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 12px;
+            background: rgba(255,255,255,.05);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: .9rem;
+        }
+        .detalle-item .item-qty {
+            color: rgba(255,255,255,.5);
+            font-size: .8rem;
+            margin-left: 8px;
+        }
+        .detalle-item .item-sub {
+            font-weight: 600;
+            color: #7bed9f;
+        }
+
+        /* Info rows */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: .9rem;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .info-row .label { color: rgba(255,255,255,.6); }
+        .info-row .value { font-weight: 600; }
+
+        /* Total */
+        .total-row {
+            border-top: 2px solid rgba(255,255,255,.15);
+            padding-top: 14px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-row .total-label {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+        .total-row .total-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #7bed9f;
+        }
+
+        /* Method select */
+        .form-select {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+        }
+        .form-select:focus {
+            background: rgba(255,255,255,.2);
+            color: #fff; box-shadow: none;
+            border-color: #ff6b81;
+        }
+        .form-select option { background: #2b2b2b; color: #fff; }
+
+        /* Cobrar button */
+        .btn-cobrar {
+            background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
+            border: none;
+            color: #1a1a2e;
+            font-weight: 700;
+            font-size: 1.05rem;
+            border-radius: 14px;
+            padding: 14px 0;
+            width: 100%;
+            margin-top: 14px;
+            transition: all .3s;
+            letter-spacing: .3px;
+        }
+        .btn-cobrar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46,213,115,.45);
+            color: #1a1a2e;
+        }
+        .btn-cobrar:disabled {
+            opacity: .4;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Placeholder panel */
+        .cobro-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,.35);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .cobro-placeholder i {
+            font-size: 3.5rem;
+            margin-bottom: 14px;
+            opacity: .4;
+        }
+
+        /* Success overlay */
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.65);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn .3s ease;
+        }
+        .success-card {
+            background: rgba(40,40,40,.95);
+            border: 1px solid rgba(46,213,115,.4);
+            border-radius: 24px;
+            padding: 50px 40px;
+            text-align: center;
+            color: #fff;
+            max-width: 400px;
+            animation: fadeInCard .5s ease;
+        }
+        .success-card .check-icon {
+            font-size: 4rem;
+            color: #2ed573;
+            margin-bottom: 16px;
+        }
+        .success-card h3 { font-weight: 700; margin-bottom: 8px; }
+        .success-card p { color: rgba(255,255,255,.6); }
+
+        @media (max-width: 991.98px) {
+            .detalle-items { max-height: 240px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Navbar ─────────────────────────────────────────── -->
+    <nav class="navbar navbar-expand-lg navbar-glass">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand" href="#"><i class="fas fa-cash-register me-2"></i>Pizzería - Caja y Pagos</a>
+            <div class="d-flex align-items-center ms-auto">
+                <a href="/admin.html" class="btn btn-outline-light me-2 btn-sm" id="btnVolverPanel"><i class="fas fa-arrow-left me-1"></i> Volver al Panel</a>
+                <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión <i class="fas fa-sign-out-alt ms-1"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Alert ──────────────────────────────────────────── -->
+    <div class="container-fluid px-3 mt-2">
+        <div id="alertPagos" class="alert d-none"></div>
+    </div>
+
+    <!-- ── Layout (2 columns) ─────────────────────────────── -->
+    <div class="container-fluid px-3 mt-2 mb-4">
+        <div class="row g-3">
+
+            <!-- ▸ Left – Pedidos pendientes / Mesas por cobrar -->
+            <div class="col-lg-5 col-xl-4">
+                <div class="glass-panel">
+                    <h5 class="mb-3"><i class="fas fa-clipboard-list me-2 text-danger"></i>Pedidos por Cobrar</h5>
+                    <div id="pedidosList">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ▸ Right – Panel de cobro -->
+            <div class="col-lg-7 col-xl-8">
+                <div class="cobro-panel" id="cobroPanel">
+                    <div class="cobro-header">
+                        <i class="fas fa-file-invoice-dollar"></i> Resumen de Cobro
+                    </div>
+
+                    <!-- Placeholder when no pedido selected -->
+                    <div class="cobro-placeholder" id="cobroPlaceholder">
+                        <i class="fas fa-hand-pointer d-block"></i>
+                        <h5>Selecciona un pedido</h5>
+                        <p style="font-size:.9rem;">Haz clic en un pedido de la columna izquierda para ver su desglose y proceder al cobro.</p>
+                    </div>
+
+                    <!-- Active cobro (hidden by default) -->
+                    <div id="cobroContent" class="d-none" style="display:flex; flex-direction:column; flex:1;">
+                        <!-- Info rows -->
+                        <div class="mb-3">
+                            <div class="info-row">
+                                <span class="label"><i class="fas fa-chair me-1"></i>Mesa</span>
+                                <span class="value" id="cobroMesa">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label"><i class="fas fa-user me-1"></i>Mesero</span>
+                                <span class="value" id="cobroMesero">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label"><i class="fas fa-clock me-1"></i>Fecha</span>
+                                <span class="value" id="cobroFecha">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label"><i class="fas fa-info-circle me-1"></i>Estado</span>
+                                <span class="value" id="cobroEstado">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Item list -->
+                        <h6 style="font-weight:600; margin-bottom:8px;"><i class="fas fa-utensils me-1"></i>Platillos consumidos</h6>
+                        <div class="detalle-items" id="cobroDetalles">
+                            <!-- populated by JS -->
+                        </div>
+
+                        <!-- Total -->
+                        <div class="total-row">
+                            <span class="total-label">TOTAL A COBRAR</span>
+                            <span class="total-amount" id="cobroTotal">$0.00</span>
+                        </div>
+
+                        <!-- Payment method -->
+                        <div class="mt-3">
+                            <label for="metodoPago" class="form-label mb-1" style="font-size:.85rem; opacity:.7;">
+                                <i class="fas fa-credit-card me-1"></i>Método de Pago
+                            </label>
+                            <select class="form-select" id="metodoPago" required>
+                                <option value="EFECTIVO">💵 Efectivo</option>
+                                <option value="TARJETA">💳 Tarjeta</option>
+                                <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                            </select>
+                        </div>
+
+                        <!-- Cobrar button -->
+                        <button class="btn btn-cobrar" id="btnCobrar">
+                            <i class="fas fa-check-circle me-2"></i>Cobrar Cuenta y Liberar Mesa
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/pagos.js"></script>
+</body>
+</html>
