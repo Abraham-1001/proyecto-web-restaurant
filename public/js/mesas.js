@@ -9,6 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     const rol = (usuario.rol || '').toUpperCase();
 
+    const btnVolverPanelMesas = document.getElementById('btnVolverPanelMesas');
+    if (btnVolverPanelMesas) {
+        if (rol === 'MESERO') {
+            btnVolverPanelMesas.href = '/mesero.html';
+        } else {
+            btnVolverPanelMesas.href = '/admin.html';
+        }
+    }
+
     if (rol === 'MESERO') {
         if (btnNueva) btnNueva.style.display = 'none';
     }

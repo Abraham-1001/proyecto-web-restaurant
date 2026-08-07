@@ -8,6 +8,7 @@ const rutaPago = require('./routes/rutaPago');
 const rutaUsuarios = require('./routes/rutaUsuarios');
 const rutaPlatillo = require('./routes/rutaPlatillo');
 const rutaPedido = require('./routes/rutaPedido');
+const rutaCorte = require('./routes/rutaCorte');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -19,6 +20,7 @@ app.use('/pagos', rutaPago);
 app.use('/usuarios', rutaUsuarios);
 app.use('/platillos', rutaPlatillo);
 app.use('/pedidos', rutaPedido);
+app.use('/cortes', rutaCorte);
 
 
 module.exports = {

@@ -25,6 +25,15 @@ const pagoSchema = new mongoose.Schema({
     type: String,
     enum: ['EXITOSO', 'RECHAZADO'],
     default: 'EXITOSO'
+  },
+  cortado: {
+    type: Boolean,
+    default: false
+  },
+  corte_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Corte',
+    required: false
   }
 });
 

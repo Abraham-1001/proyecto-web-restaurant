@@ -4,11 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const kpiCobrados = document.getElementById('kpiCobrados');
     const kpiPendientes = document.getElementById('kpiPendientes');
     const tablaHistorial = document.getElementById('tablaHistorial');
+    const tablaCortesPasados = document.getElementById('tablaCortesPasados');
     const alertCorte = document.getElementById('alertCorte');
     const btnVolverPanel = document.getElementById('btnVolverPanel');
+    const btnRealizarCorte = document.getElementById('btnRealizarCorte');
 
     // Detect logged-in user for "Volver" link
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const usuarioString = localStorage.getItem('usuario');
+    const usuario = JSON.parse(usuarioString || '{}');
     if (btnVolverPanel) {
         const rol = (usuario.rol || '').toUpperCase();
         if (rol === 'CAJERO') {
@@ -38,23 +41,16 @@ document.addEventListener('DOMContentLoaded', () => {
             hour: '2-digit', minute: '2-digit'
         });
     };
-    
-    // Check if a date is today (local time roughly)
-    const isToday = (dateStr) => {
-        if (!dateStr) return false;
-        const d = new Date(dateStr);
-        const today = new Date();
-        return d.getDate() === today.getDate() &&
-               d.getMonth() === today.getMonth() &&
-               d.getFullYear() === today.getFullYear();
-    };
+
+    let pagosPendientesDeCorte = [];
 
     const loadData = async () => {
         try {
-            // Fetch both pedidos and pagos
-            const [resPedidos, resPagos] = await Promise.all([
+            // Fetch pedidos, pagos, y cortes
+            const [resPedidos, resPagos, resCortes] = await Promise.all([
                 fetch('/pedidos', { headers: getHeaders() }),
-                fetch('/pagos', { headers: getHeaders() })
+                fetch('/pagos', { headers: getHeaders() }),
+                fetch('/cortes', { headers: getHeaders() })
             ]);
 
             if (resPedidos.status === 401 || resPedidos.status === 403 || resPagos.status === 401 || resPagos.status === 403) {
@@ -66,54 +62,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!resPedidos.ok) throw new Error('Error al obtener los pedidos');
-            if (!resPagos.ok) throw new Error('Error al obtener los pagos');
-
-            let pedidos = await resPedidos.json();
-            let pagos = await resPagos.json();
+            let pedidos = [];
+            if (resPedidos.ok) pedidos = await resPedidos.json();
+            let pagos = [];
+            if (resPagos.ok) pagos = await resPagos.json();
+            let cortes = [];
+            if (resCortes.ok) cortes = await resCortes.json();
 
             if (!Array.isArray(pedidos)) pedidos = [];
             if (!Array.isArray(pagos)) pagos = [];
+            if (!Array.isArray(cortes)) cortes = [];
 
             // Calculate KPIs
             let totalIngresosHoy = 0;
             let pedidosCobradosHoy = 0;
             let pedidosPendientesCount = 0;
-
-            const pagosMap = {};
-            pagos.forEach(p => {
-                pagosMap[p.pedido] = p; // assuming p.pedido is the Object ID of the pedido
-            });
-
+            
             const pedidosCobradosList = [];
+            pagosPendientesDeCorte = [];
 
+            // Filtrar pagos que NO han sido cortados
+            const pagosNoCortados = pagos.filter(p => p.estado === 'EXITOSO' && p.cortado === false);
+
+            const pedidosMap = {};
+            pedidos.forEach(p => pedidosMap[p._id] = p);
+
+            // Contar pedidos pendientes (no pagados ni cancelados)
             pedidos.forEach(pedido => {
-                if (pedido.estado === 'PAGADO') {
-                    // It's a paid order. Check if it has a payment record and if it's from today.
-                    const pago = pagosMap[pedido._id];
-                    // We assume it's today if either pago.fecha_pago is today, or pedido.fecha is today
-                    const dateToCheck = (pago && pago.fecha_pago) ? pago.fecha_pago : pedido.fecha;
-                    
-                    if (isToday(dateToCheck)) {
-                        totalIngresosHoy += parseFloat(pedido.total || 0);
-                        pedidosCobradosHoy++;
-                    }
-                    
-                    // Add to table list
-                    pedidosCobradosList.push({ ...pedido, pagoAsociado: pago });
-
-                } else if (pedido.estado !== 'CANCELADO') {
+                if (pedido.estado !== 'PAGADO' && pedido.estado !== 'CANCELADO') {
                     pedidosPendientesCount++;
                 }
             });
+
+            // Procesar pagos no cortados para la tabla de historial activo
+            pagosNoCortados.forEach(pago => {
+                totalIngresosHoy += pago.monto;
+                pedidosCobradosHoy++;
+                
+                const pedidoObj = pedidosMap[pago.pedido];
+                if (pedidoObj) {
+                    pedidosCobradosList.push({ ...pedidoObj, pagoAsociado: pago });
+                }
+            });
+
+            pagosPendientesDeCorte = pagosNoCortados; // Guardar referencia
 
             // Update DOM KPIs
             kpiIngresos.textContent = `$${totalIngresosHoy.toFixed(2)}`;
             kpiCobrados.textContent = pedidosCobradosHoy;
             kpiPendientes.textContent = pedidosPendientesCount;
 
-            // Render Table
-            renderTable(pedidosCobradosList);
+            // Bloquear botón si no hay ventas por cortar
+            btnRealizarCorte.disabled = (pagosNoCortados.length === 0);
+
+            // Render Tables
+            renderTablaActiva(pedidosCobradosList);
+            renderTablaCortes(cortes);
 
         } catch (error) {
             console.error(error);
@@ -121,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const renderTable = (pedidosCobradosList) => {
+    const renderTablaActiva = (pedidosCobradosList) => {
         tablaHistorial.innerHTML = '';
 
         if (pedidosCobradosList.length === 0) {
@@ -129,25 +133,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td colspan="6" class="empty-state">
                         <i class="fas fa-receipt d-block"></i>
-                        No hay cobros registrados aún.
+                        No hay cobros pendientes de corte.
                     </td>
                 </tr>
             `;
             return;
         }
 
-        // Sort descending by date
-        pedidosCobradosList.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        pedidosCobradosList.sort((a, b) => new Date(b.pagoAsociado.fecha_pago) - new Date(a.pagoAsociado.fecha_pago));
 
         pedidosCobradosList.forEach(pedido => {
             const mesaNum = pedido.mesa ? `Mesa ${pedido.mesa.numero_mesa}` : 'N/A';
             const meseroNombre = pedido.mesero ? `${pedido.mesero.nombre} ${pedido.mesero.apellido || ''}` : 'N/A';
-            const total = parseFloat(pedido.total || 0).toFixed(2);
+            const total = parseFloat(pedido.pagoAsociado.monto || 0).toFixed(2);
             const pago = pedido.pagoAsociado;
             const metodoPago = pago ? pago.metodo_pago : 'DESCONOCIDO';
             
-            // Prefer the payment date, otherwise the order date
-            const dateStr = (pago && pago.fecha_pago) ? pago.fecha_pago : pedido.fecha;
+            const dateStr = pago.fecha_pago;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -160,6 +162,126 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             tablaHistorial.appendChild(tr);
         });
+    };
+
+    const renderTablaCortes = (cortes) => {
+        tablaCortesPasados.innerHTML = '';
+
+        if (cortes.length === 0) {
+            tablaCortesPasados.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty-state" style="padding: 20px;">
+                        No hay cortes registrados.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        cortes.forEach(corte => {
+            const usuarioNombre = corte.usuario ? `${corte.usuario.nombre} ${corte.usuario.apellido || ''}` : 'N/A';
+            const total = parseFloat(corte.total_recaudado || 0).toFixed(2);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatDate(corte.fecha_corte)}</td>
+                <td>${usuarioNombre}</td>
+                <td class="fw-bold">$${total}</td>
+                <td>${corte.cantidad_ventas}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-light btnDescargarPdf" data-corte='${JSON.stringify(corte)}'>
+                        <i class="fas fa-file-pdf text-danger"></i> PDF
+                    </button>
+                </td>
+            `;
+            tablaCortesPasados.appendChild(tr);
+        });
+
+        // Add event listeners to PDF buttons
+        document.querySelectorAll('.btnDescargarPdf').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const corteData = JSON.parse(e.currentTarget.getAttribute('data-corte'));
+                generarPDF(corteData);
+            });
+        });
+    };
+
+    btnRealizarCorte.addEventListener('click', async () => {
+        if (pagosPendientesDeCorte.length === 0) {
+            showAlert('No hay ventas para realizar un corte.', 'warning');
+            return;
+        }
+
+        if (!confirm('¿Estás seguro de realizar el Corte de Caja? Esto limpiará el historial activo.')) {
+            return;
+        }
+
+        btnRealizarCorte.disabled = true;
+        btnRealizarCorte.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+
+        try {
+            const res = await fetch('/cortes', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ usuario: usuario._id })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.message || 'Error al procesar el corte');
+            }
+
+            const data = await res.json();
+            showAlert('Corte de caja realizado exitosamente.', 'success');
+
+            // Generate PDF immediately after cut
+            generarPDF(data.corte);
+
+            // Reload data
+            await loadData();
+        } catch (error) {
+            console.error(error);
+            showAlert(error.message, 'danger');
+        } finally {
+            btnRealizarCorte.innerHTML = '<i class="fas fa-file-invoice-dollar me-1"></i> Realizar Corte de Caja';
+            btnRealizarCorte.disabled = false;
+        }
+    });
+
+    const generarPDF = (corte) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const usuarioNombre = corte.usuario ? (corte.usuario.nombre + " " + (corte.usuario.apellido || "")) : "N/A";
+        
+        doc.setFontSize(22);
+        doc.text("Pizzería - Reporte de Corte de Caja", 14, 22);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text("Folio (ID): " + corte._id, 14, 30);
+        doc.text("Fecha y Hora: " + formatDate(corte.fecha_corte), 14, 36);
+        doc.text("Usuario Responsable: " + usuarioNombre, 14, 42);
+        
+        doc.autoTable({
+            startY: 50,
+            head: [['Concepto', 'Total']],
+            body: [
+                ['Ventas en Efectivo', '$' + parseFloat(corte.desglose.EFECTIVO || 0).toFixed(2)],
+                ['Ventas con Tarjeta', '$' + parseFloat(corte.desglose.TARJETA || 0).toFixed(2)],
+                ['Ventas por Transferencia', '$' + parseFloat(corte.desglose.TRANSFERENCIA || 0).toFixed(2)],
+                ['Cantidad Total de Ventas', corte.cantidad_ventas],
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [255, 107, 129] }
+        });
+
+        const finalY = doc.lastAutoTable.finalY || 50;
+
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.text("TOTAL RECAUDADO: $" + parseFloat(corte.total_recaudado || 0).toFixed(2), 14, finalY + 15);
+
+        doc.save(`corte_de_caja_${corte._id.substring(corte._id.length - 6)}.pdf`);
     };
 
     loadData();

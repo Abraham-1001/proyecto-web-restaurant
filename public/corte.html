@@ -123,13 +123,17 @@
         /* --- Tabla Oscura --- */
         .table-dark-glass {
             --bs-table-bg: transparent;
-            color: #fff;
+            color: #ffffff !important;
             margin-top: 20px;
+        }
+
+        .table-dark-glass * {
+            color: #ffffff !important;
         }
 
         .table-dark-glass thead th {
             border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            color: #ff6b81;
+            color: #ff6b81 !important;
             font-weight: 600;
         }
 
@@ -189,7 +193,10 @@
 
     <div class="container">
         <div class="glass-panel">
-            <h3 class="mb-4"><i class="fas fa-wallet me-2"></i> Resumen de Ventas</h3>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0"><i class="fas fa-wallet me-2"></i> Resumen de Ventas Pendientes</h3>
+                <button class="btn btn-custom" id="btnRealizarCorte"><i class="fas fa-file-invoice-dollar me-1"></i> Realizar Corte de Caja</button>
+            </div>
             
             <div id="alertCorte" class="alert d-none"></div>
 
@@ -217,8 +224,8 @@
                 </div>
             </div>
 
-            <h4 class="mb-3">Historial de Cobros</h4>
-            <div class="table-responsive">
+            <h4 class="mb-3">Ventas a incluir en el corte</h4>
+            <div class="table-responsive mb-5">
                 <table class="table table-dark-glass">
                     <thead>
                         <tr>
@@ -235,9 +242,31 @@
                     </tbody>
                 </table>
             </div>
+
+            <h4 class="mb-3 border-top pt-4 border-secondary">Cortes de Caja Realizados</h4>
+            <div class="table-responsive">
+                <table class="table table-dark-glass">
+                    <thead>
+                        <tr>
+                            <th>Fecha de Corte</th>
+                            <th>Realizado por</th>
+                            <th>Recaudado ($)</th>
+                            <th>Cantidad Ventas</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCortesPasados">
+                        <!-- Generado por JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
+    <!-- jsPDF and AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/corte.js"></script>
 </body>
