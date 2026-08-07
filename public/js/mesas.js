@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGuardar = document.getElementById('btnGuardarMesa');
     const alertMesas = document.getElementById('alertMesas');
 
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const rol = (usuario.rol || '').toUpperCase();
+
+    if (rol === 'MESERO') {
+        if (btnNueva) btnNueva.style.display = 'none';
+    }
+
     // API headers generator
     const getHeaders = () => {
         const token = localStorage.getItem('token');
@@ -74,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="mesa-capacidad"><i class="fas fa-users me-1"></i>${mesa.capacidad} personas</div>
                                 <div class="mt-2">${getBadge(mesa.estado)}</div>
                             </div>
+                            ${rol !== 'MESERO' ? `
                             <div class="mesa-actions">
                                 <button class="btn btn-sm btn-outline-light" onclick="editarMesa('${mesa._id}')">
                                     <i class="fas fa-edit me-1"></i>Editar
@@ -82,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <i class="fas fa-trash me-1"></i>Eliminar
                                 </button>
                             </div>
+                            ` : ''}
                         </div>
                     `;
                     mesasGrid.appendChild(col);

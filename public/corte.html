@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Corte de Caja e Historial</title>
+    <!-- Script de Protección de Ruta -->
+    <script>
+        const token = localStorage.getItem('token');
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const rol = (usuario.rol || '').toUpperCase();
+        
+        if (!token || (rol !== 'ADMIN' && rol !== 'CAJERO')) {
+            window.location.href = '/index.html';
+        }
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = '/index.html';
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2b2b2b;
+            background-blend-mode: overlay;
+        }
+
+        .navbar-glass {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            color: #fff !important;
+            font-weight: 700;
+        }
+
+        .btn-custom, .btn-logout {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-custom:hover, .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            color: white;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            color: #fff;
+            margin-top: 30px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Tarjetas Resumen (KPIs) --- */
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            color: #fff;
+            transition: all 0.35s ease;
+            text-align: center;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .kpi-card i {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            color: #ff6b6b;
+            transition: transform 0.3s;
+        }
+
+        .kpi-card:hover i {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .kpi-card h4 {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .kpi-card .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* --- Tabla Oscura --- */
+        .table-dark-glass {
+            --bs-table-bg: transparent;
+            color: #fff;
+            margin-top: 20px;
+        }
+
+        .table-dark-glass thead th {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            color: #ff6b81;
+            font-weight: 600;
+        }
+
+        .table-dark-glass tbody td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            vertical-align: middle;
+        }
+
+        .badge-estado {
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-pagado {
+            background: linear-gradient(135deg, #2ed573, #7bed9f);
+            color: #1a1a2e;
+        }
+
+        .badge-pendiente {
+            background: linear-gradient(135deg, #ffa502, #eccc68);
+            color: #1a1a2e;
+        }
+
+        .badge-metodo {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-glass">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-chart-line me-2"></i>Pizzería - Corte de Caja</a>
+            <div class="d-flex align-items-center ms-auto">
+                <a href="#" id="btnVolverPanel" class="btn btn-outline-light me-3 btn-sm"><i class="fas fa-arrow-left me-1"></i> Volver al Panel</a>
+                <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión <i class="fas fa-sign-out-alt ms-1"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="glass-panel">
+            <h3 class="mb-4"><i class="fas fa-wallet me-2"></i> Resumen de Ventas</h3>
+            
+            <div id="alertCorte" class="alert d-none"></div>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="kpi-card">
+                        <i class="fas fa-dollar-sign"></i>
+                        <h4>Total Ingresos Hoy</h4>
+                        <div class="kpi-value" id="kpiIngresos">$0.00</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="kpi-card">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Pedidos Cobrados (Hoy)</h4>
+                        <div class="kpi-value" id="kpiCobrados">0</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="kpi-card">
+                        <i class="fas fa-clock"></i>
+                        <h4>Pedidos Pendientes</h4>
+                        <div class="kpi-value" id="kpiPendientes">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="mb-3">Historial de Cobros</h4>
+            <div class="table-responsive">
+                <table class="table table-dark-glass">
+                    <thead>
+                        <tr>
+                            <th>Mesa</th>
+                            <th>Mesero</th>
+                            <th>Hora / Fecha</th>
+                            <th>Método de Pago</th>
+                            <th>Total ($)</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial">
+                        <!-- Las filas se generan con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/corte.js"></script>
+</body>
+</html>
