@@ -253,35 +253,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const usuarioNombre = corte.usuario ? (corte.usuario.nombre + " " + (corte.usuario.apellido || "")) : "N/A";
         
-        doc.setFontSize(22);
-        doc.text("Pizzería - Reporte de Corte de Caja", 14, 22);
+        const logoImg = new Image();
+        logoImg.src = '/img/Logo.png';
         
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text("Folio (ID): " + corte._id, 14, 30);
-        doc.text("Fecha y Hora: " + formatDate(corte.fecha_corte), 14, 36);
-        doc.text("Usuario Responsable: " + usuarioNombre, 14, 42);
+        const buildPdf = (withLogo) => {
+            if (withLogo) {
+                doc.addImage(logoImg, 'PNG', 14, 10, 20, 20); 
+                doc.setFontSize(22);
+                doc.text("El Artesano", 40, 20);
+                doc.setFontSize(16);
+                doc.text("CORTE DE CAJA", 40, 28);
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text("Folio (ID): " + corte._id, 14, 40);
+                doc.text("Fecha y Hora: " + formatDate(corte.fecha_corte), 14, 46);
+                doc.text("Usuario Responsable: " + usuarioNombre, 14, 52);
+            } else {
+                doc.setFontSize(22);
+                doc.text("El Artesano - Reporte de Corte de Caja", 14, 22);
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text("Folio (ID): " + corte._id, 14, 30);
+                doc.text("Fecha y Hora: " + formatDate(corte.fecha_corte), 14, 36);
+                doc.text("Usuario Responsable: " + usuarioNombre, 14, 42);
+            }
+            
+            const startY = withLogo ? 60 : 50;
+            
+            doc.autoTable({
+                startY: startY,
+                head: [['Concepto', 'Total']],
+                body: [
+                    ['Ventas en Efectivo', '$' + parseFloat(corte.desglose.EFECTIVO || 0).toFixed(2)],
+                    ['Ventas con Tarjeta', '$' + parseFloat(corte.desglose.TARJETA || 0).toFixed(2)],
+                    ['Ventas por Transferencia', '$' + parseFloat(corte.desglose.TRANSFERENCIA || 0).toFixed(2)],
+                    ['Cantidad Total de Ventas', corte.cantidad_ventas],
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: [255, 107, 129] }
+            });
+
+            const finalY = doc.lastAutoTable.finalY || startY;
+
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("TOTAL RECAUDADO: $" + parseFloat(corte.total_recaudado || 0).toFixed(2), 14, finalY + 15);
+
+            doc.save(`corte_de_caja_${corte._id.substring(corte._id.length - 6)}.pdf`);
+        };
         
-        doc.autoTable({
-            startY: 50,
-            head: [['Concepto', 'Total']],
-            body: [
-                ['Ventas en Efectivo', '$' + parseFloat(corte.desglose.EFECTIVO || 0).toFixed(2)],
-                ['Ventas con Tarjeta', '$' + parseFloat(corte.desglose.TARJETA || 0).toFixed(2)],
-                ['Ventas por Transferencia', '$' + parseFloat(corte.desglose.TRANSFERENCIA || 0).toFixed(2)],
-                ['Cantidad Total de Ventas', corte.cantidad_ventas],
-            ],
-            theme: 'grid',
-            headStyles: { fillColor: [255, 107, 129] }
-        });
-
-        const finalY = doc.lastAutoTable.finalY || 50;
-
-        doc.setFontSize(14);
-        doc.setTextColor(0);
-        doc.text("TOTAL RECAUDADO: $" + parseFloat(corte.total_recaudado || 0).toFixed(2), 14, finalY + 15);
-
-        doc.save(`corte_de_caja_${corte._id.substring(corte._id.length - 6)}.pdf`);
+        logoImg.onload = () => buildPdf(true);
+        logoImg.onerror = () => buildPdf(false);
     };
 
     loadData();
