@@ -7,13 +7,14 @@
     <link rel="icon" type="image/png" href="/img/Logo.png">
     <meta name="description" content="Módulo de gestión de usuarios y personal de El Artesano.">
     <!-- Script de Protección de Ruta (solo ADMIN) -->
+    <script src="/js/auth.js"></script>
     <script>
         if (!localStorage.getItem('token')) {
-            window.location.href = '/index.html';
+            window.location.replace('/index.html');
         }
         const _usr = JSON.parse(localStorage.getItem('usuario') || '{}');
         if (_usr.rol && _usr.rol !== 'ADMIN') {
-            window.location.href = '/index.html';
+            window.location.replace('/index.html');
         }
         function cerrarSesion() {
             localStorage.removeItem('token');

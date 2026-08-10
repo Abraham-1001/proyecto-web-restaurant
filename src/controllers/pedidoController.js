@@ -156,7 +156,8 @@ function ModificarPedido(req, res) {
 /*function ModificarPedido(req, res) {
     const consulta = {};
     consulta[req.params.key] = req.params.value;
-    modeloPedido.findOneAndUpdate(consulta,{estado: req.body.estado},{returnDocument: 'after'})
+    const estadosPermitidos = ['PENDIENTE', 'EN_PREPARACION', 'SERVIDO', 'PAGADO', 'CANCELADO'];
+    if (!estadosPermitidos.includes(req.body.estado)) {
     .then((pedido) => {
         if (!pedido) {
             return res.status(404).json({message: "Pedido no encontrado"});
