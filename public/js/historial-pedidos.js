@@ -110,12 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el pedido.');
+            if (!response.ok) throw new Error(ui.friendlyError(data, 'No se pudo actualizar el pedido.'));
             const indice = pedidos.findIndex(pedido => pedido._id === id);
             if (indice !== -1) pedidos[indice] = data.pedido;
             render();
         } catch (error) {
-            mostrarAlerta(error.message);
+            mostrarAlerta(ui.friendlyError({ error: error.message }, 'No se pudo actualizar el pedido.'));
         }
     };
 
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pedidos = Array.isArray(data) ? data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)) : [];
             render();
         } catch (error) {
-            mostrarAlerta(error.message);
+            mostrarAlerta(ui.friendlyError({ error: error.message }, 'No se pudieron consultar los pedidos.'));
         }
     };
 

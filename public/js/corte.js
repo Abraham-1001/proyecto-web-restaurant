@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (!confirm('¿Estás seguro de realizar el Corte de Caja? Esto limpiará el historial activo.')) {
+        if (!await ui.confirm('¿Estás seguro de realizar el Corte de Caja? Esto limpiará el historial activo.', 'Confirmar corte de caja')) {
             return;
         }
 
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || 'Error al procesar el corte');
+                throw new Error(ui.friendlyError(errData, 'No se pudo procesar el corte de caja.'));
             }
 
             const data = await res.json();
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadData();
         } catch (error) {
             console.error(error);
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo procesar el corte de caja.'), 'danger');
         } finally {
             btnRealizarCorte.innerHTML = '<i class="fas fa-file-invoice-dollar me-1"></i> Realizar Corte de Caja';
             btnRealizarCorte.disabled = false;

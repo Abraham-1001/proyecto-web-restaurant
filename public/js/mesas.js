@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || errData.error || 'Error en la petición');
+                throw new Error(ui.friendlyError(errData, 'No se pudo guardar la mesa.'));
             }
 
             modalMesa.hide();
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadMesas();
         } catch (error) {
             modalMesa.hide();
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo guardar la mesa.'), 'danger');
         }
     });
 
@@ -191,13 +191,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modalMesaTitle').textContent = 'Editar Mesa';
             modalMesa.show();
         } catch (error) {
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo cargar la mesa.'), 'danger');
         }
     };
 
     // ── Delete (Global Window Function) ────────────────────────
     window.eliminarMesa = async (id) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar esta mesa?')) return;
+        if (!await ui.confirm('¿Estás seguro de que deseas eliminar esta mesa?', 'Eliminar mesa')) return;
 
         try {
             const res = await fetch(`/mesas/_id/${id}`, {
@@ -207,13 +207,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || 'Error al eliminar');
+                throw new Error(ui.friendlyError(errData, 'No se pudo eliminar la mesa.'));
             }
 
             showAlert('Mesa eliminada correctamente', 'success');
             loadMesas();
         } catch (error) {
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo eliminar la mesa.'), 'danger');
         }
     };
 

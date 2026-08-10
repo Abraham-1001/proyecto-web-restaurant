@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || errData.error || 'Error en la petición');
+                throw new Error(ui.friendlyError(errData, 'No se pudo guardar el usuario.'));
             }
 
             modalUsuario.hide();
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadUsuarios();
         } catch (err) {
             modalUsuario.hide();
-            showAlert(err.message, 'danger');
+            showAlert(ui.friendlyError({ error: err.message }, 'No se pudo guardar el usuario.'), 'danger');
         }
     });
 
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modalUsuarioTitle').textContent = 'Editar Usuario';
             modalUsuario.show();
         } catch (err) {
-            showAlert(err.message, 'danger');
+            showAlert(ui.friendlyError({ error: err.message }, 'No se pudo cargar el usuario.'), 'danger');
         }
     };
 
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //  DELETE (Global)
     // ══════════════════════════════════════════════════════════
     window.eliminarUsuario = async (id, nombre) => {
-        if (!confirm(`¿Estás seguro de que deseas eliminar a "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
+        if (!await ui.confirm(`¿Estás seguro de que deseas eliminar a "${nombre}"? Esta acción no se puede deshacer.`, 'Eliminar usuario')) return;
 
         try {
             const res = await fetch(`/usuarios/_id/${id}`, {
@@ -229,13 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || 'Error al eliminar');
+                throw new Error(ui.friendlyError(errData, 'No se pudo eliminar el usuario.'));
             }
 
             showAlert('Usuario eliminado correctamente', 'success');
             loadUsuarios();
         } catch (err) {
-            showAlert(err.message, 'danger');
+            showAlert(ui.friendlyError({ error: err.message }, 'No se pudo eliminar el usuario.'), 'danger');
         }
     };
 

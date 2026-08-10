@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || errData.error || 'Error al crear el pedido');
+                throw new Error(ui.friendlyError(errData, 'No se pudo crear el pedido.'));
             }
 
             const data = await res.json();
@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadMesas();
 
         } catch (err) {
-            showAlert(err.message, 'danger');
+            showAlert(ui.friendlyError({ error: err.message }, 'No se pudo crear el pedido.'), 'danger');
         } finally {
             btnEnviar.disabled = false;
             btnEnviar.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Confirmar y Enviar a Cocina';

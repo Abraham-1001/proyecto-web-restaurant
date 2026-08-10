@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (!confirm(`¿Confirmar cobro de $${parseFloat(pedidoSeleccionado.total).toFixed(2)} con ${metodoPago.value}?`)) {
+        if (!await ui.confirm(`¿Confirmar cobro de $${parseFloat(pedidoSeleccionado.total).toFixed(2)} con ${metodoPago.value}?`, 'Confirmar cobro')) {
             return;
         }
 
@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || errData.error || 'Error al procesar el pago');
+                throw new Error(ui.friendlyError(errData, 'No se pudo procesar el pago.'));
             }
 
             // Show success overlay
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadPedidos();
 
         } catch (err) {
-            showAlert(err.message, 'danger');
+            showAlert(ui.friendlyError({ error: err.message }, 'No se pudo procesar el pago.'), 'danger');
         } finally {
             btnCobrar.disabled = false;
             btnCobrar.innerHTML = '<i class="fas fa-check-circle me-2"></i>Cobrar Cuenta y Liberar Mesa';

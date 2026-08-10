@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || errData.error || 'Error en la petición');
+                throw new Error(ui.friendlyError(errData, 'No se pudo guardar el platillo.'));
             }
 
             modalPlatillo.hide();
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadPlatillos();
         } catch (error) {
             modalPlatillo.hide();
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo guardar el platillo.'), 'danger');
         }
     });
 
@@ -161,13 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modalTitle').textContent = 'Editar Platillo';
             modalPlatillo.show();
         } catch (error) {
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo cargar el platillo.'), 'danger');
         }
     };
 
     // Delete (Global Window Function)
     window.eliminarPlatillo = async (id) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este platillo?')) return;
+        if (!await ui.confirm('¿Estás seguro de que deseas eliminar este platillo?', 'Eliminar platillo')) return;
         
         try {
             const res = await fetch(`/platillos/_id/${id}`, {
@@ -177,13 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || 'Error al eliminar');
+                throw new Error(ui.friendlyError(errData, 'No se pudo eliminar el platillo.'));
             }
 
             showAlert('Platillo eliminado correctamente', 'success');
             loadPlatillos();
         } catch (error) {
-            showAlert(error.message, 'danger');
+            showAlert(ui.friendlyError({ error: error.message }, 'No se pudo eliminar el platillo.'), 'danger');
         }
     };
 
