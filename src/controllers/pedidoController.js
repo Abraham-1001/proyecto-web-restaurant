@@ -22,12 +22,15 @@ async function CrearPedido(req, res) {
         if (mesa.estado !== "LIBRE") {
             return res.status(400).json({message: "La mesa ya está ocupada."});
         }
-        if (!req.body.detalles || req.body.detalles.length === 0) {
+        if (!Array.isArray(req.body.detalles) || req.body.detalles.length === 0) {
             return res.status(400).json({message: "El pedido debe contener al menos un platillo."});
         }
         let total = 0;
         const detallesCalculados = [];
         for (const detalle of req.body.detalles) {
+            if (!Number.isInteger(detalle.cantidad) || detalle.cantidad < 1) {
+                return res.status(400).json({message: "La cantidad de cada platillo debe ser un entero mayor que cero."});
+            }
             const platillo = await modeloPlatillo.findById(detalle.platillo);
             if (!platillo) {
                 return res.status(404).json({message: "Uno de los platillos no existe."});

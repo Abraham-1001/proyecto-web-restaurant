@@ -17,18 +17,20 @@ async function CrearUsuario(req, res) {
 
         // 3. Cifrar la contraseña en texto plano (ahora es seguro porque ya validamos que existe)
         const passCifrada = await bcrypt.hash(req.body.password, 10);
-        req.body.password = passCifrada;
-
         // 4. Guardar en MongoDB
-        const nuevoUsuario = new modeloUsuario(req.body);
+        const nuevoUsuario = new modeloUsuario({
+            ...req.body,
+            password: passCifrada
+        });
         await nuevoUsuario.save();
 
         // 5. Excluir el password cifrado de la respuesta por seguridad
-        nuevoUsuario.password = undefined;
+        const usuarioSeguro = nuevoUsuario.toObject();
+        delete usuarioSeguro.password;
 
         return res.status(201).json({
             message: 'Usuario creado correctamente',
-            usuario: nuevoUsuario
+            usuario: usuarioSeguro
         });
     }
     catch (error) {
@@ -90,11 +92,16 @@ async function ModificarUsuario(req, res) {
             }
             req.body.password = await bcrypt.hash(req.body.password, 10);
         }
-        const usuario = await modeloUsuario.findOneAndUpdate(consulta, req.body, { returnDocument: 'after' });
+        const usuario = await modeloUsuario.findOneAndUpdate(consulta, req.body, {
+            returnDocument: 'after',
+            runValidators: true
+        });
         if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
-        return res.status(200).json({ message: 'Usuario modificado correctamente', usuario });
+        const usuarioSeguro = usuario.toObject();
+        delete usuarioSeguro.password;
+        return res.status(200).json({ message: 'Usuario modificado correctamente', usuario: usuarioSeguro });
     }
     catch (error) {
         return res.status(400).json({ error: error.message });
@@ -104,6 +111,9 @@ async function ModificarUsuario(req, res) {
 async function loginUsuario(req, res) {
     try {
         const { correo, password } = req.body;
+        if (!correo || !password) {
+            return res.status(401).json({ message: 'Credenciales inválidas' });
+        }
         const usuario = await modeloUsuario.findOne({ correo });
         if (!usuario) {
             return res.status(401).json({ message: 'Credenciales inválidas' });
@@ -111,6 +121,10 @@ async function loginUsuario(req, res) {
 
         if (!usuario.password) {
             return res.status(401).json({ message: 'Credenciales inválidas' });
+        }
+
+        if (!usuario.estado) {
+            return res.status(401).json({ message: 'La cuenta está inactiva' });
         }
 
         const passwordValida = await bcrypt.compare(password, usuario.password);
@@ -124,7 +138,10 @@ async function loginUsuario(req, res) {
             { expiresIn: '8h' }
         );
 
-        return res.status(200).json({ mensaje: "Login exitoso", usuario, token });
+        const usuarioSeguro = usuario.toObject();
+        delete usuarioSeguro.password;
+
+        return res.status(200).json({ mensaje: "Login exitoso", usuario: usuarioSeguro, token });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

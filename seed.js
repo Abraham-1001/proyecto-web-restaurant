@@ -6,6 +6,9 @@ const Usuario = require('./src/models/usuariosModel');
 const Categoria = require('./src/models/categoriaModel');
 const Platillo = require('./src/models/platilloModel');
 const Mesa = require('./src/models/mesaModel');
+const Pedido = require('./src/models/pedidoModel');
+const Pago = require('./src/models/pagoModel');
+const Corte = require('./src/models/corteModel');
 
 const seedDB = async () => {
   try {
@@ -17,6 +20,9 @@ const seedDB = async () => {
     await Categoria.deleteMany({});
     await Platillo.deleteMany({});
     await Mesa.deleteMany({});
+    await Pedido.deleteMany({});
+    await Pago.deleteMany({});
+    await Corte.deleteMany({});
     console.log('✅ Colecciones limpiadas');
 
     // Crear Usuarios con contraseñas encriptadas

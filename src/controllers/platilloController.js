@@ -82,7 +82,7 @@ function ModificarPlatillo(req, res) {
                 if (!categoria) {
                     return res.status(404).json({message: "La categoria no existe."});
                 }
-                return modeloPlatillo.findOneAndUpdate(consulta, req.body, { returnDocument: 'after' });
+                return modeloPlatillo.findOneAndUpdate(consulta, req.body, { returnDocument: 'after', runValidators: true });
             })
             .then((platillo) => {
                 if(!platillo) {
@@ -94,7 +94,7 @@ function ModificarPlatillo(req, res) {
                 res.status(400).json({ error: error.message });
             });
     }
-    modeloPlatillo.findOneAndUpdate(consulta, req.body, { returnDocument: 'after' })
+    modeloPlatillo.findOneAndUpdate(consulta, req.body, { returnDocument: 'after', runValidators: true })
         .then((platillo) => {
             if(!platillo) {
                 return res.status(404).json({ message: 'Platillo no encontrado' });

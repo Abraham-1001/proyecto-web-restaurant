@@ -76,7 +76,7 @@ function EliminarCategoria(req, res) {
 function ModificarCategoria(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloCategoria.findOneAndUpdate(consulta, req.body, { returnDocument: 'after' })
+    modeloCategoria.findOneAndUpdate(consulta, req.body, { returnDocument: 'after', runValidators: true })
         .then((categoria) => {
             if(!categoria) {
                 return res.status(404).json({ message: 'Categoria no encontrada' });

@@ -69,34 +69,54 @@ function ConsultarPago(req, res) {
         });
 }
 
-function EliminarPago(req, res) {
+async function EliminarPago(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloPago.findOneAndDelete(consulta)
-        .then((pago) => {
-            if(!pago) {
-                return res.status(404).json({ message: 'Pago no encontrado' });
+    try {
+        const pago = await modeloPago.findOne(consulta);
+        if (!pago) {
+            return res.status(404).json({ message: 'Pago no encontrado' });
+        }
+        if (pago.cortado) {
+            return res.status(400).json({ message: 'No se puede eliminar un pago incluido en un corte de caja' });
+        }
+
+        await modeloPago.deleteOne({ _id: pago._id });
+        const pedido = await modeloPedido.findById(pago.pedido);
+        if (pedido && pedido.estado === 'PAGADO') {
+            pedido.estado = 'PENDIENTE';
+            await pedido.save();
+            const mesa = await modeloMesa.findById(pedido.mesa);
+            if (mesa) {
+                mesa.estado = 'OCUPADA';
+                await mesa.save();
             }
-            res.status(200).json({ message: 'Pago eliminado correctamente'});
-        })
-        .catch((error) => {
-            res.status(400).json({ error: error.message });
-        });
+        }
+        return res.status(200).json({ message: 'Pago eliminado correctamente' });
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
 }
 
-function ModificarPago(req, res) {
+async function ModificarPago(req, res) {
     const consulta = {}
     consulta[req.params.key] = req.params.value;
-    modeloPago.findOneAndUpdate(consulta, { metodo_pago:req.body.metodo_pago, estado:req.body.estado }, { returnDocument: 'after' })
-        .then((pago) => {
-            if(!pago) {
-                return res.status(404).json({ message: 'Pago no encontrado' });
-            }
-            res.status(200).json({ message: 'Pago modificado correctamente', pago });
-        })
-        .catch((error) => {
-            res.status(400).json({ error: error.message });
-        });
+    try {
+        const pago = await modeloPago.findOne(consulta);
+        if (!pago) {
+            return res.status(404).json({ message: 'Pago no encontrado' });
+        }
+        if (pago.cortado) {
+            return res.status(400).json({ message: 'No se puede modificar un pago incluido en un corte de caja' });
+        }
+
+        pago.metodo_pago = req.body.metodo_pago;
+        pago.estado = req.body.estado;
+        await pago.save();
+        return res.status(200).json({ message: 'Pago modificado correctamente', pago });
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
 }
 
 module.exports = {

@@ -1,6 +1,9 @@
 const express = require('express')
 const router = express.Router();
 const pagoController = require('../controllers/pagoController');
+const { authenticate, authorizeRoles } = require('../middleware/auth');
+
+router.use(authenticate, authorizeRoles('CAJERO', 'ADMIN'));
 
 router.post('/', pagoController.CrearPago)
     .get('/', pagoController.ObtenerPagos)

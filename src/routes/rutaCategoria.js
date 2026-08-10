@@ -1,11 +1,14 @@
 const express = require('express')
 const router = express.Router();
 const categoriaController = require('../controllers/categoriaController');
+const { authenticate, authorizeRoles } = require('../middleware/auth');
 
-router.post('/', categoriaController.CrearCategoria)
-    .get('/', categoriaController.ObtenerCategorias)
+router.use(authenticate);
+
+router.get('/', categoriaController.ObtenerCategorias)
     .get('/:key/:value', categoriaController.ConsultarCategoria)
-    .delete('/:key/:value', categoriaController.EliminarCategoria)
-    .put('/:key/:value', categoriaController.ModificarCategoria)
+    .post('/', authorizeRoles('ADMIN'), categoriaController.CrearCategoria)
+    .delete('/:key/:value', authorizeRoles('ADMIN'), categoriaController.EliminarCategoria)
+    .put('/:key/:value', authorizeRoles('ADMIN'), categoriaController.ModificarCategoria)
 
 module.exports = router;
