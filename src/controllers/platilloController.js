@@ -48,29 +48,27 @@ function ConsultarPlatillo(req, res) {
         });
 }
 
-function EliminarPlatillo(req, res) {
-    const consulta = {}
-    consulta[req.params.key] = req.params.value;
-    modeloPlatillo.findOne(consulta)
-        .then((platillo) => {
-            if(!platillo) {
-                return res.status(404).json({ message: 'Platillo no encontrado' });
-            }
-            return modeloPedido.findOne({ "detalles.platillo": platillo._id })
-                .then((pedido) => {
-                    if(pedido) {
-                        return res.status(400).json({ message: 'No se puede eliminar el platillo porque hay pedidos asociados a él' });
-                    }
-                    return modeloPlatillo.findByIdAndDelete(platillo._id);
-                });
-        })
-        .then((platilloEliminado) => {
-            if(!platilloEliminado) return;
-            res.status(200).json({ message: 'Platillo eliminado correctamente'});
-        })
-        .catch((error) => {
-            res.status(400).json({ error: error.message });
-        });
+async function EliminarPlatillo(req, res) {
+    try {
+        const consulta = {};
+        consulta[req.params.key] = req.params.value;
+
+        const platillo = await modeloPlatillo.findOne(consulta);
+        if (!platillo) {
+            return res.status(404).json({ message: 'Platillo no encontrado' });
+        }
+
+        const pedido = await modeloPedido.findOne({ "detalles.platillo": platillo._id });
+        if (pedido) {
+            return res.status(400).json({ message: 'No se puede eliminar el platillo porque hay pedidos asociados a él' });
+        }
+
+        await modeloPlatillo.findByIdAndDelete(platillo._id);
+        return res.status(200).json({ message: 'Platillo eliminado correctamente' });
+
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
 }
 
 function ModificarPlatillo(req, res) {

@@ -41,29 +41,27 @@ function ConsultarMesa(req, res) {
         });
 }
 
-function EliminarMesa(req, res) {
-    const consulta = {}
-    consulta[req.params.key] = req.params.value;
-    modeloMesa.findOne(consulta)
-        .then((mesa) => {
-            if(!mesa) {
-                return res.status(404).json({ message: 'Mesa no encontrada' });
-            }
-            return modeloPedido.findOne({ mesa: mesa._id })
-            .then((pedido) => {
-                if(pedido) {
-                    return res.status(400).json({ message: 'No se puede eliminar la mesa porque hay pedidos asociados a ella' });
-                }
-                return modeloMesa.findByIdAndDelete(mesa._id);
-            });
-        })
-        .then((mesaEliminada) => {
-            if(!mesaEliminada) return;
-            res.status(200).json({ message: 'Mesa eliminada correctamente'});
-        })
-        .catch((error) => {
-            res.status(400).json({ error: error.message });
-        });
+async function EliminarMesa(req, res) {
+    try {
+        const consulta = {};
+        consulta[req.params.key] = req.params.value;
+
+        const mesa = await modeloMesa.findOne(consulta);
+        if (!mesa) {
+            return res.status(404).json({ message: 'Mesa no encontrada' });
+        }
+
+        const pedido = await modeloPedido.findOne({ mesa: mesa._id });
+        if (pedido) {
+            return res.status(400).json({ message: 'No se puede eliminar la mesa porque hay pedidos asociados a ella' });
+        }
+
+        await modeloMesa.findByIdAndDelete(mesa._id);
+        return res.status(200).json({ message: 'Mesa eliminada correctamente' });
+
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
 }
 
 function ModificarMesa(req, res) {

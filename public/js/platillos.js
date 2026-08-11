@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNuevo = document.getElementById('btnNuevoPlatillo');
     const btnGuardar = document.getElementById('btnGuardar');
     const alertPlatillos = document.getElementById('alertPlatillos');
+
+    const platilloFormSchema = {
+        nombre: { type: 'string', required: true, minLength: 2 },
+        categoria: { type: 'string', required: true },
+        precio: { type: 'number', required: true, min: 0 }
+    };
     
     // API headers generator
     const getHeaders = () => {
@@ -20,6 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
         alertPlatillos.className = `alert alert-${type}`;
         alertPlatillos.classList.remove('d-none');
         setTimeout(() => alertPlatillos.classList.add('d-none'), 5000);
+    };
+
+    const parseErrorResponse = async (res) => {
+        try {
+            return await res.json();
+        } catch {
+            return { error: res.statusText || 'Error de servidor' };
+        }
     };
 
     // Load Categorías
@@ -111,9 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
             disponible: document.getElementById('disponible').checked
         };
 
-        if (!bodyData.nombre || !bodyData.categoria || isNaN(bodyData.precio)) {
-            showAlert('Faltan datos obligatorios.', 'warning');
-            modalPlatillo.hide();
+        const validationErrors = formValidators.validateForm(bodyData, platilloFormSchema);
+        if (validationErrors.length) {
+            showAlert(validationErrors[0].message, 'warning');
             return;
         }
 
@@ -128,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!res.ok) {
-                const errData = await res.json();
+                const errData = await parseErrorResponse(res);
                 throw new Error(ui.friendlyError(errData, 'No se pudo guardar el platillo.'));
             }
 
@@ -176,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!res.ok) {
-                const errData = await res.json();
+                const errData = await parseErrorResponse(res);
                 throw new Error(ui.friendlyError(errData, 'No se pudo eliminar el platillo.'));
             }
 

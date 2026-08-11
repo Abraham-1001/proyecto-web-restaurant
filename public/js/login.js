@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const alertaError = document.getElementById('alertaError');
 
+    const loginSchema = {
+        correo: { type: 'email', required: true },
+        password: { type: 'string', required: true, minLength: 6 }
+    };
+
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -11,6 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const correo = document.getElementById('correo').value.trim();
         const password = document.getElementById('password').value;
+
+        const validationErrors = formValidators.validateForm({ correo, password }, loginSchema);
+        if (validationErrors.length) {
+            alertaError.textContent = validationErrors[0].message;
+            alertaError.classList.remove('d-none');
+            return;
+        }
 
         try {
             const response = await fetch('/usuarios/login', {

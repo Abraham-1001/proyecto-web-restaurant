@@ -23,6 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => alertUsuarios.classList.add('d-none'), 5000);
     };
 
+    const parseErrorResponse = async (res) => {
+        try {
+            return await res.json();
+        } catch {
+            return { error: res.statusText || 'Error de servidor' };
+        }
+    };
+
+    const usuarioFormSchema = {
+        nombre: { type: 'string', required: true, minLength: 2 },
+        correo: { type: 'email', required: true },
+        rol: { type: 'string', required: true },
+        telefono: { type: 'string', pattern: '^\\+?[0-9\s\-()]{7,20}$', message: 'Ingresa un teléfono válido (solo dígitos, espacios, guiones, paréntesis y +).' },
+        password: { type: 'string', minLength: 6 }
+    };
+
     const handleAuthError = (res) => {
         if (res.status === 401 || res.status === 403) {
             showAlert('Tu sesión ha expirado o es inválida.', 'warning');
@@ -138,10 +154,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const rol      = document.getElementById('rol').value;
         const estado   = document.getElementById('estado').checked;
 
-        // Validations
-        if (!nombre) { showAlert('El nombre es obligatorio.', 'warning'); return; }
-        if (!correo) { showAlert('El correo es obligatorio.', 'warning'); return; }
-        if (!rol)    { showAlert('Selecciona un rol.', 'warning'); return; }
+        const validationErrors = formValidators.validateForm({ nombre, correo, rol, password, telefono }, usuarioFormSchema);
+        if (validationErrors.length) {
+            showAlert(validationErrors[0].message, 'warning');
+            return;
+        }
 
         // Password required only for new users
         if (!id && !password) {
@@ -170,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!res.ok) {
-                const errData = await res.json();
+                const errData = await parseErrorResponse(res);
                 throw new Error(ui.friendlyError(errData, 'No se pudo guardar el usuario.'));
             }
 

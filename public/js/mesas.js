@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGuardar = document.getElementById('btnGuardarMesa');
     const alertMesas = document.getElementById('alertMesas');
 
+    const mesaFormSchema = {
+        numero_mesa: { type: 'integer', required: true, min: 1 },
+        capacidad: { type: 'integer', required: true, min: 1 },
+        estado: { type: 'string', required: true, enum: ['LIBRE', 'OCUPADA', 'RESERVADA'] }
+    };
+
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     const rol = (usuario.rol || '').toUpperCase();
 
@@ -37,6 +43,14 @@ document.addEventListener('DOMContentLoaded', () => {
         alertMesas.className = `alert alert-${type}`;
         alertMesas.classList.remove('d-none');
         setTimeout(() => alertMesas.classList.add('d-none'), 5000);
+    };
+
+    const parseErrorResponse = async (res) => {
+        try {
+            return await res.json();
+        } catch {
+            return { error: res.statusText || 'Error de servidor' };
+        }
     };
 
     // Badge helper
@@ -131,22 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btnGuardar.addEventListener('click', async () => {
         const id = document.getElementById('mesaId').value;
         const bodyData = {
-            numero_mesa: parseInt(document.getElementById('numero_mesa').value),
-            capacidad: parseInt(document.getElementById('capacidad').value),
+            numero_mesa: parseInt(document.getElementById('numero_mesa').value, 10),
+            capacidad: parseInt(document.getElementById('capacidad').value, 10),
             estado: document.getElementById('estado').value
         };
 
-        // Validations
-        if (!bodyData.numero_mesa || bodyData.numero_mesa < 1) {
-            showAlert('El número de mesa es obligatorio y debe ser mayor a 0.', 'warning');
-            return;
-        }
-        if (!bodyData.capacidad || bodyData.capacidad < 1) {
-            showAlert('La capacidad es obligatoria y debe ser mayor a 0.', 'warning');
-            return;
-        }
-        if (!bodyData.estado) {
-            showAlert('Debes seleccionar un estado para la mesa.', 'warning');
+        const validationErrors = formValidators.validateForm(bodyData, mesaFormSchema);
+        if (validationErrors.length) {
+            showAlert(validationErrors[0].message, 'warning');
             return;
         }
 
@@ -161,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!res.ok) {
-                const errData = await res.json();
+                const errData = await parseErrorResponse(res);
                 throw new Error(ui.friendlyError(errData, 'No se pudo guardar la mesa.'));
             }
 
@@ -206,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!res.ok) {
-                const errData = await res.json();
+                const errData = await parseErrorResponse(res);
                 throw new Error(ui.friendlyError(errData, 'No se pudo eliminar la mesa.'));
             }
 

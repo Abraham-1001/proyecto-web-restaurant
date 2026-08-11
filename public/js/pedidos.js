@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             // Success!
-            showAlert('🎉 ¡Pedido enviado a cocina exitosamente!', 'success');
+            showAlert('¡Pedido enviado a cocina exitosamente!', 'success');
 
             // Clear ticket
             ticketItems = [];

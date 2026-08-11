@@ -249,59 +249,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const generarPDF = (corte) => {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        const usuarioNombre = corte.usuario ? (corte.usuario.nombre + " " + (corte.usuario.apellido || "")) : "N/A";
-        
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        const margin = 40;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const contentWidth = pageWidth - margin * 2;
+        const usuarioNombre = corte.usuario ? `${corte.usuario.nombre} ${corte.usuario.apellido || ''}`.trim() : 'N/A';
+        const reportDate = formatDate(corte.fecha_corte);
         const logoImg = new Image();
         logoImg.src = '/img/Logo.png';
-        
+
         const buildPdf = (withLogo) => {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.setTextColor('#1f2937');
             if (withLogo) {
-                doc.addImage(logoImg, 'PNG', 14, 10, 20, 20); 
-                doc.setFontSize(22);
-                doc.text("El Artesano", 40, 20);
-                doc.setFontSize(16);
-                doc.text("CORTE DE CAJA", 40, 28);
-                doc.setFontSize(11);
-                doc.setTextColor(100);
-                doc.text("Folio (ID): " + corte._id, 14, 40);
-                doc.text("Fecha y Hora: " + formatDate(corte.fecha_corte), 14, 46);
-                doc.text("Usuario Responsable: " + usuarioNombre, 14, 52);
+                doc.addImage(logoImg, 'PNG', margin, 30, 55, 55);
+                doc.text('EL ARTESANO', margin + 70, 50);
             } else {
-                doc.setFontSize(22);
-                doc.text("El Artesano - Reporte de Corte de Caja", 14, 22);
-                doc.setFontSize(11);
-                doc.setTextColor(100);
-                doc.text("Folio (ID): " + corte._id, 14, 30);
-                doc.text("Fecha y Hora: " + formatDate(corte.fecha_corte), 14, 36);
-                doc.text("Usuario Responsable: " + usuarioNombre, 14, 42);
+                doc.text('EL ARTESANO', margin, 50);
             }
-            
-            const startY = withLogo ? 60 : 50;
-            
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor('#4b5563');
+            const introY = withLogo ? 80 : 70;
+            doc.setDrawColor('#d1d5db');
+            doc.setLineWidth(0.8);
+            doc.line(margin, introY + 12, pageWidth - margin, introY + 12);
+
+            const detailsY = introY + 32;
+            doc.setFontSize(10);
+            doc.text(`Folio: ${corte._id}`, margin, detailsY);
+            doc.text(`Fecha: ${reportDate}`, margin, detailsY + 16);
+            doc.text(`Responsable: ${usuarioNombre}`, margin, detailsY + 32);
+
+            const tableY = detailsY + 60;
             doc.autoTable({
-                startY: startY,
-                head: [['Concepto', 'Total']],
+                startY: tableY,
+                head: [[
+                    { content: 'Concepto', styles: { halign: 'left' } },
+                    { content: 'Total', styles: { halign: 'right' } }
+                ]],
                 body: [
-                    ['Ventas en Efectivo', '$' + parseFloat(corte.desglose.EFECTIVO || 0).toFixed(2)],
-                    ['Ventas con Tarjeta', '$' + parseFloat(corte.desglose.TARJETA || 0).toFixed(2)],
-                    ['Ventas por Transferencia', '$' + parseFloat(corte.desglose.TRANSFERENCIA || 0).toFixed(2)],
-                    ['Cantidad Total de Ventas', corte.cantidad_ventas],
+                    ['Ventas en Efectivo', `$${parseFloat(corte.desglose.EFECTIVO || 0).toFixed(2)}`],
+                    ['Ventas con Tarjeta', `$${parseFloat(corte.desglose.TARJETA || 0).toFixed(2)}`],
+                    ['Ventas por Transferencia', `$${parseFloat(corte.desglose.TRANSFERENCIA || 0).toFixed(2)}`],
+                    ['Cantidad total de ventas', String(corte.cantidad_ventas)],
                 ],
                 theme: 'grid',
-                headStyles: { fillColor: [255, 107, 129] }
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 10,
+                    textColor: '#111827',
+                    fillColor: '#f8fafc',
+                    cellPadding: 8,
+                    lineColor: '#e5e7eb',
+                    lineWidth: 0.5
+                },
+                headStyles: {
+                    fillColor: '#111827',
+                    textColor: '#ffffff',
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { cellWidth: contentWidth * 0.7 },
+                    1: { cellWidth: contentWidth * 0.3 }
+                },
+                margin: { left: margin, right: margin }
             });
 
-            const finalY = doc.lastAutoTable.finalY || startY;
+            const finalY = doc.lastAutoTable.finalY + 30;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor('#111827');
+            doc.text('TOTAL RECAUDADO', margin, finalY);
+            doc.text(`$${parseFloat(corte.total_recaudado || 0).toFixed(2)}`, pageWidth - margin, finalY, { align: 'right' });
 
-            doc.setFontSize(14);
-            doc.setTextColor(0);
-            doc.text("TOTAL RECAUDADO: $" + parseFloat(corte.total_recaudado || 0).toFixed(2), 14, finalY + 15);
+            const footerY = doc.internal.pageSize.getHeight() - 40;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor('#6b7280');
+            doc.text('El Artesano · Corte de Caja', margin, footerY);
+            doc.text(`Página 1`, pageWidth - margin, footerY, { align: 'right' });
 
-            doc.save(`corte_de_caja_${corte._id.substring(corte._id.length - 6)}.pdf`);
+            doc.save(`corte_de_caja_${corte._id.slice(-6)}.pdf`);
         };
-        
+
         logoImg.onload = () => buildPdf(true);
         logoImg.onerror = () => buildPdf(false);
     };
