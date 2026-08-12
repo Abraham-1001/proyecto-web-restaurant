@@ -1,8 +1,14 @@
 node_modules
 npm-debug.log
+*.log
+logs
 .DS_Store
 dist
 coverage
 .env
+.env.*
 .git
 .gitignore
+Dockerfile
+docker-compose.yml
+README.md
