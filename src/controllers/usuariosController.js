@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const modeloUsuario = require('../models/usuariosModel');
+const { jwtSecret } = require('../config/config');
 
 async function CrearUsuario(req, res) {
     try {
@@ -134,7 +135,7 @@ async function loginUsuario(req, res) {
 
         const token = jwt.sign(
             { _id: usuario._id, correo: usuario.correo, rol: usuario.rol },
-            process.env.JWT_SECRET || 'secreto_super_seguro_jwt',
+            jwtSecret,
             { expiresIn: '8h' }
         );
 
