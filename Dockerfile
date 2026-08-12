@@ -1,5 +1,5 @@
 # Base image – LTS ligera y estable
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Seguridad: no correr como root
 RUN addgroup -g 1001 -S appgroup && \
